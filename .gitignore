@@ -1,0 +1,6 @@
+*.o
+/eintr
+/eled
+/emc
+/eser
+/cnf

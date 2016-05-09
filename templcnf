@@ -1,0 +1,7 @@
+AS = as
+CC = gcc
+LD = gcc
+CFLAGS = -g -Wall -pedantic -m32 -nostdlib
+CPPFLAGS = -I$$(pwd)/include/
+LDFLAGS = -m32 -nostdlib -Tlds
+ASFLAGS = --32
