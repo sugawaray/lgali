@@ -11,6 +11,7 @@ typedef unsigned	u32;
 void outb(u16 port, u8 value);
 void outl(u16 port, u32 value);
 void inb(u16 port, u8 *buf);
+void inw(u16 port, u16 *buf);
 void inl(u16 port, u32 *buf);
 
 void nop();

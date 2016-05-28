@@ -1,5 +1,6 @@
 .globl	inb
 .globl	inl
+.globl	inw
 .globl	outb
 .globl	outl
 .globl	nop
@@ -118,6 +119,17 @@ inl:
 	addl	$12,	%ecx
 	movl	(%ecx),	%edx
 	movl	%eax,	(%edx)
+	popl	%ebp
+	ret
+/* 1: port,	2: 16bit pointer */
+inw:
+	pushl	%ebp
+	movl	%esp,	%ebp
+	mov	8(%ebp),	%dx
+	xor	%ax,	%ax
+	inw	%dx,	%ax
+	mov	12(%ebp),	%edx
+	mov	%ax,	(%edx)
 	popl	%ebp
 	ret
 /* 1: port,	2: 8bit pointer */
