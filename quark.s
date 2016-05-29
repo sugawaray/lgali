@@ -137,10 +137,10 @@ inb:
 	pushl	%ebp
 	movl	%esp,	%ebp
 	mov	8(%ebp),	%dx
-	xor	%eax,	%eax
+	xor	%al,	%al
 	inb	%dx,	%al
-	movl	12(%ebp),	%edx
-	movl	%eax,	(%edx)
+	mov	12(%ebp),	%edx
+	mov	%al,	(%edx)
 	popl	%ebp
 	ret
 outb:

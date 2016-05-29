@@ -22,3 +22,7 @@ void sidt(char *d);
 void ic8259_init(int off);
 
 void wait();
+
+void pcicsetdev(int dev);
+void pcicsetfn(int fn);
+void pcicpr();
