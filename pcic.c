@@ -24,6 +24,8 @@ pcicsetfn(int v)
 #define RINTRPIN	0x3D
 #define RMSGCTRL	0xA2
 #define RMSGADDR	0xA4
+#define RMSGDATA	0xA8
+#define RVECMASK	0xAC
 
 #define ADDR(o)	(PCICADDR(bus, dev, fn, (o)))
 
@@ -59,6 +61,14 @@ pcicpr()
 	seroutf("message control register(0x%X)\r\n", v16);
 
 	outl(PCIC_ADDR_PORT, ADDR(RMSGADDR));
-	inl(PCIC_ADDR_PORT, &v32);
+	inl(PCIC_DATA_PORT, &v32);
 	seroutf("message address register(0x%X)\r\n", v32);
+
+	outl(PCIC_ADDR_PORT, ADDR(RMSGDATA));
+	inw(PCIC_DATA_PORT, &v16);
+	seroutf("message data register(0x%X)\r\n", v16);
+
+	outl(PCIC_ADDR_PORT, ADDR(RVECMASK));
+	inl(PCIC_DATA_PORT, &v32);
+	seroutf("mask bits for MSI(0x%X)\r\n", v32);
 }
