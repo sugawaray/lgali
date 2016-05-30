@@ -1,5 +1,6 @@
 #include <quark.h>
 #include "intrim.h"
+#include <intr.h>
 #include <led.h>
 
 void
@@ -42,4 +43,13 @@ void
 ontimer1()
 {
 	ledmemit(2, 1);
+}
+
+void
+intrgsetad(struct Idtrec *o, void (*f)())
+{
+	o->offl = ((u32)f & 0xFFFF);
+/*	o->ssel = 0x2 << 0x3;	*/
+/*	o->attr = 0x8000 | (c << 8);	*/
+	o->offh = ((u32)((u32)f & 0xFFFF0000) >> 0x10);
 }
