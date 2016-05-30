@@ -5,3 +5,7 @@ CFLAGS = -g -Wall -pedantic -m32 -nostdlib
 CPPFLAGS = -I$$(pwd)/include/
 LDFLAGS = -m32 -nostdlib -Tlds
 ASFLAGS = --32
+TCFLAGS = -g -Wall -pedantic -m32
+TCPPFLAGS = -I$$(pwd)/include/ -I[incdir]
+TLDFLAGS = -m32 -L[libdir] -lnomagicc
+TASFLAGS = --32

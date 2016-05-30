@@ -1,4 +1,5 @@
 *.o
+*.to
 /eintr
 /eled
 /emc
