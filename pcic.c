@@ -72,3 +72,31 @@ pcicpr()
 	inl(PCIC_DATA_PORT, &v32);
 	seroutf("mask bits for MSI(0x%X)\r\n", v32);
 }
+
+void
+pcicw32(u32 off, u32 v)
+{
+	outl(PCIC_ADDR_PORT, ADDR(off));
+	outl(PCIC_DATA_PORT, v);
+}
+
+void
+pcicr32(u32 off, u32 *v)
+{
+	outl(PCIC_ADDR_PORT, ADDR(off));
+	inl(PCIC_DATA_PORT, v);
+}
+
+void
+pcicw16(u32 off, u16 v)
+{
+	outl(PCIC_ADDR_PORT, ADDR(off));
+	outw(PCIC_DATA_PORT, v);
+}
+
+void
+pcicr16(u32 off, u16 *v)
+{
+	outl(PCIC_ADDR_PORT, ADDR(off));
+	inw(PCIC_DATA_PORT, v);
+}

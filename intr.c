@@ -46,10 +46,20 @@ ontimer1()
 }
 
 void
-intrgsetad(struct Idtrec *o, void (*f)())
+idtrsetad(struct Idtrec *o, void (*f)())
 {
 	o->offl = ((u32)f & 0xFFFF);
-/*	o->ssel = 0x2 << 0x3;	*/
-/*	o->attr = 0x8000 | (c << 8);	*/
 	o->offh = ((u32)((u32)f & 0xFFFF0000) >> 0x10);
+}
+
+void
+idtrsettype(struct Idtrec *o, u8 t)
+{
+	o->attr = 0x8000 | (t << 0x8);
+}
+
+void
+idtrsetssel(struct Idtrec *o, u8 v)
+{
+	o->ssel = v << 0x3;
 }

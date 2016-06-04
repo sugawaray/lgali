@@ -2,6 +2,7 @@
 .globl	inl
 .globl	inw
 .globl	outb
+.globl	outw
 .globl	outl
 .globl	nop
 .globl	sgdt
@@ -11,7 +12,16 @@
 .globl	ontimer
 .globl	ontimer2
 .globl	ontrap
+.globl	sti
+.globl	cli
+.globl	oneth
 .text
+sti:
+	sti
+	ret
+cli:
+	cli
+	ret
 ic8259_init:
 	pushl	%ebp
 	movl	%esp,	%ebp
@@ -151,6 +161,16 @@ outb:
 	outb	%al,	%dx
 	popl	%ebp
 	ret
+outw:
+	pushl	%ebp
+	movl	%esp,	%ebp
+	mov	8(%ebp),	%dx
+	mov	12(%ebp),	%ax
+	out	%ax,	%dx
+	popl	%ebp
+	ret
 nop:
 	nop
 	ret
+oneth:
+	iret
