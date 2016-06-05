@@ -173,4 +173,10 @@ nop:
 	nop
 	ret
 oneth:
+	pusha
+	cld
+	call oneth1
+	mov	$0xFEE000B0,	%edx
+	movl	$0x30,	(%edx)
+	popa
 	iret

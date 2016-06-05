@@ -1,3 +1,4 @@
+#include "intrim.h"
 #include <quark.h>
 #include <intr.h>
 #include <led.h>
@@ -11,15 +12,16 @@
 
 static struct Idtrec idt[0x100];
 
-static void oneth();
-
 #define RLAPICID	0xFEE00020
 
 #define MSGADDR	0xFEE00000
 #define MSGDATA	(0x00 | VEC)
 
+#define OFFBAR0	0x10
 #define OFFMSGADDR	0xA4
 #define OFFMSGDATA	0xA8
+
+static u32 *rintren;
 
 static
 void
@@ -45,6 +47,7 @@ static
 void
 intrinit()
 {
+	u32 v32;
 	struct Idtrec *rec;
 	char tp[6];
 
@@ -56,6 +59,14 @@ intrinit()
 	idtrsettype(rec, IDTRINTR);
 	idtrsetad(rec, oneth);
 	configmsg();
+	pcicr32(OFFBAR0, &v32);
+	v32 &= ~0 << 12;
+	rintren = (u32 *)(v32 + 0x101C);
+
+	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
+	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
+	lidt(tp);
+	sti();
 }
 
 int
@@ -78,7 +89,10 @@ main()
 	pcicpr();
 	intrinit();
 
-	for (;;)
-		;
+	for (;;) {
+		ledmemit(5, 1);
+		wait();
+		wait();
+	}
 	return 0;
 }

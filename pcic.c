@@ -20,6 +20,7 @@ pcicsetfn(int v)
 #define RVENDOR	0x0
 #define RCMD	0x04
 #define RSTATUS	0x06
+#define RBAR0	0x10
 #define RINTRLINE	0x3C
 #define RINTRPIN	0x3D
 #define RMSGCTRL	0xA2
@@ -55,6 +56,10 @@ pcicpr()
 	outl(PCIC_ADDR_PORT, ADDR(RSTATUS));
 	inw(PCIC_DATA_PORT, &v16);
 	seroutf("status register(0x%X)\r\n", v16);
+
+	outl(PCIC_ADDR_PORT, ADDR(RBAR0));
+	inl(PCIC_DATA_PORT, &v32);
+	seroutf("base address register(0x%X)\r\n", v32);
 
 	outl(PCIC_ADDR_PORT, ADDR(RMSGCTRL));
 	inw(PCIC_DATA_PORT, &v16);
