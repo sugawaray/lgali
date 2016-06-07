@@ -29,6 +29,17 @@ void sti();
 
 void wait();
 
+#define POFFVENDOR	0x0
+#define POFFCMD	0x04
+#define POFFSTATUS	0x06
+#define POFFBAR0	0x10
+#define POFFINTRLINE	0x3C
+#define POFFINTRPIN	0x3D
+#define POFFMSGCTRL	0xA2
+#define POFFMSGADDR	0xA4
+#define POFFMSGDATA	0xA8
+#define POFFVECMASK	0xAC
+
 void pcicsetdev(int dev);
 void pcicsetfn(int fn);
 void pcicpr();
@@ -36,5 +47,6 @@ void pcicw32(u32 off, u32 v);
 void pcicw16(u32 off, u16 v);
 void pcicr32(u32 off, u32 *v);
 void pcicr16(u32 off, u16 *v);
+void pcicr8(u32 off, u8 *v);
 
 #endif
