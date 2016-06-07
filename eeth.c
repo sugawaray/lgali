@@ -9,19 +9,24 @@
 #define IDFUN	6
 
 #define VEC	0x30
+#define SVEC	0x31
 
 static struct Idtrec idt[0x100];
 
 #define RLAPICID	0xFEE00020
+#define RSIV	0xFEE000F0
+#define MAPICID 0x07000000
+#define APICEN	0x00000100
 
 #define MSGADDR	0xFEE00000
 #define MSGDATA	(0x00 | VEC)
 
-#define OFFBAR0	0x10
-#define OFFMSGADDR	0xA4
-#define OFFMSGDATA	0xA8
 
-static u32 *rintren;
+static u32 base0;
+static volatile u32 *rmacconf;
+static volatile u32 *rintren;
+static volatile u32 *rsiv;
+static volatile u32 *ropmod;
 
 static
 void
@@ -33,13 +38,16 @@ configmsg()
 
 	a = (u32 *)RLAPICID;
 	v = *a;
-	pcicw32(OFFMSGADDR, MSGADDR | (v << 0xC));
+	seroutf("APIC ID(0x%X)\r\n", v);
+	v = ((unsigned)(v & MAPICID) >> 0x18);
+	seroutf("MSGADDR VALUE(0x%X)\r\n", MSGADDR | (v << 0xC));
+	pcicw32(POFFMSGADDR, MSGADDR | (v << 0xC));
 	v = 0;
-	pcicr32(OFFMSGADDR, &v);
+	pcicr32(POFFMSGADDR, &v);
 	seroutf("MSGADDR(0x%X)\r\n", v);
-	pcicw16(OFFMSGDATA, MSGDATA);
+	pcicw16(POFFMSGDATA, MSGDATA);
 	v16 = 0;
-	pcicr16(OFFMSGDATA, &v16);
+	pcicr16(POFFMSGDATA, &v16);
 	seroutf("MSGDATA(0x%X)\r\n", v16);
 }
 
@@ -59,11 +67,24 @@ intrinit()
 	idtrsettype(rec, IDTRINTR);
 	idtrsetad(rec, oneth);
 	configmsg();
-	pcicr32(OFFBAR0, &v32);
+	pcicw16(POFFCMD, 0x0002);
+	pcicr32(POFFBAR0, &v32);
 	v32 &= ~0 << 12;
+	base0 = v32;
+
+	rmacconf = (u32 *)(base0 + 0x0000);
+	seroutf("MAC Configuration register(0x%X)\r\n", *rmacconf);
 	rintren = (u32 *)(v32 + 0x101C);
 
 	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
+	*rintren |= 0x00000040;
+	rsiv = (u32 *)RSIV;
+	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", *rsiv);
+	*rsiv = *rsiv | APICEN | VEC;
+
+	ropmod = (u32 *)(base0 + 0x1018);
+	seroutf("Operation mode register(0x%X)\r\n", *ropmod);
+
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
 	sti();
@@ -90,7 +111,10 @@ main()
 	intrinit();
 
 	for (;;) {
-		ledmemit(5, 1);
+#if 1
+		asm ("int $0x30\n\t");
+		ledmemit(10, 1);
+#endif
 		wait();
 		wait();
 	}
