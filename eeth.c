@@ -28,9 +28,45 @@ static volatile u32 *rintren;
 static volatile u32 *rsiv;
 static volatile u32 *ropmod;
 
+enum {
+	Busmasen	=	0x0004,
+	Memspcen	=	0x0002,
+
+	Rcvintren	=	0x00000040
+};
+
+enum {
+	Mmmacconf	= 0x0000,
+	Mmopmod	= 0x1018,
+	Mmintren	= 0x101C
+};
 static
 void
-configmsg()
+initpcic()
+{
+	u32 v32;
+
+	pcicw16(POFFCMD, Busmasen | Memspcen);
+	pcicr32(POFFBAR0, &v32);
+	v32 &= ~0 << 12;
+	base0 = v32;
+}
+
+static
+void
+initmmr()
+{
+	rmacconf = (u32 *)(base0 + Mmmacconf);
+	rintren = (u32 *)(base0 + Mmintren);
+	ropmod = (u32 *)(base0 + Mmopmod);
+
+	seroutf("MAC Configuration register(0x%X)\r\n", *rmacconf);
+	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
+}
+
+static
+void
+init1()
 {
 	u16 v16;
 	u32 *a;
@@ -53,9 +89,19 @@ configmsg()
 
 static
 void
+initintr()
+{
+	*rintren |= Rcvintren;
+	rsiv = (u32 *)RSIV;
+	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", *rsiv);
+	*rsiv = *rsiv | APICEN | VEC;
+}
+
+
+static
+void
 intrinit()
 {
-	u32 v32;
 	struct Idtrec *rec;
 	char tp[6];
 
@@ -66,25 +112,10 @@ intrinit()
 	idtrsetssel(rec, 0x02);
 	idtrsettype(rec, IDTRINTR);
 	idtrsetad(rec, oneth);
-	configmsg();
-	pcicw16(POFFCMD, 0x0002);
-	pcicr32(POFFBAR0, &v32);
-	v32 &= ~0 << 12;
-	base0 = v32;
-
-	rmacconf = (u32 *)(base0 + 0x0000);
-	seroutf("MAC Configuration register(0x%X)\r\n", *rmacconf);
-	rintren = (u32 *)(v32 + 0x101C);
-
-	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
-	*rintren |= 0x00000040;
-	rsiv = (u32 *)RSIV;
-	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", *rsiv);
-	*rsiv = *rsiv | APICEN | VEC;
-
-	ropmod = (u32 *)(base0 + 0x1018);
-	seroutf("Operation mode register(0x%X)\r\n", *ropmod);
-
+	initpcic();
+	init1();
+	initmmr();
+	initintr();
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
 	sti();
