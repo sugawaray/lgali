@@ -2,7 +2,8 @@ AS = as
 CC = gcc
 LD = gcc
 CFLAGS = -g -Wall -pedantic -m32 -nostdlib
-CPPFLAGS = -I$$(pwd)/include/
+DEFS = -DMACADDRH=[macaddrh] -DMACADDRL=[macaddrl]
+CPPFLAGS = -I$$(pwd)/include/ $(DEFS)
 LDFLAGS = -m32 -nostdlib -Tlds
 ASFLAGS = --32
 TCFLAGS = -g -Wall -pedantic -m32

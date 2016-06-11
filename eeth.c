@@ -24,6 +24,8 @@ static struct Idtrec idt[0x100];
 
 static u32 base0;
 static volatile u32 *rmacconf;
+static volatile u32 *rmacad0h;
+static volatile u32 *rmacad0l;
 static volatile u32 *rintren;
 static volatile u32 *rsiv;
 static volatile u32 *ropmod;
@@ -32,11 +34,14 @@ enum {
 	Busmasen	=	0x0004,
 	Memspcen	=	0x0002,
 
+	Macaden	= 0x80000000,
 	Rcvintren	=	0x00000040
 };
 
 enum {
 	Mmmacconf	= 0x0000,
+	Mmmacad0h	= 0x0040,
+	Mmmacad0l	= 0x0044,
 	Mmopmod	= 0x1018,
 	Mmintren	= 0x101C
 };
@@ -57,8 +62,13 @@ void
 initmmr()
 {
 	rmacconf = (u32 *)(base0 + Mmmacconf);
+	rmacad0h = (u32 *)(base0 + Mmmacad0h);
+	rmacad0l = (u32 *)(base0 + Mmmacad0l);
 	rintren = (u32 *)(base0 + Mmintren);
 	ropmod = (u32 *)(base0 + Mmopmod);
+
+	*rmacad0h = Macaden | MACADDRH;
+	*rmacad0l = MACADDRL;
 
 	seroutf("MAC Configuration register(0x%X)\r\n", *rmacconf);
 	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
