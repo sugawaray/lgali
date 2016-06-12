@@ -14,6 +14,8 @@ enum {
 	Mre	= 0x00000004,
 	Re	= 0x00000004
 /* #define AE	0x80000000 */
+#define MRA	0x80000000
+#define RA	0x80000000
 };
 
 u32
@@ -37,5 +39,13 @@ ethdefmcnf(u32 orig)
 	orig &= ~Mre;
 	orig |= Re;
 
+	return orig;
+}
+
+u32
+ethdefmff(u32 orig)
+{
+	orig &= MRA;
+	orig |= RA;
 	return orig;
 }
