@@ -16,7 +16,15 @@ static struct Idtrec idt[0x100];
 
 enum {
 	Rdsclbase	= 0x100000,
-	Tdsclbase	= 0x100100
+	Rbuf1ad	= 0x100200,
+	Rbuf1sz	= 0x100,
+	Rbuf2ad	= 0x100300,
+	Rbuf2sz	= 0x100,
+	Tdsclbase	= 0x100400,
+	Tbuf1ad	= 0x100500,
+	Tbuf1sz	= 0x100,
+	Tbuf2ad	= 0x100600,
+	Tbuf2sz	= 0x100
 };
 
 static volatile struct Rdesc *rdesc = Rdsclbase;
