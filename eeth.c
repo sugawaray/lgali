@@ -1,4 +1,5 @@
 #include "intrim.h"
+#include "ethim.h"
 #include <quark.h>
 #include <intr.h>
 #include <led.h>
@@ -34,7 +35,7 @@ enum {
 	Busmasen	=	0x0004,
 	Memspcen	=	0x0002,
 
-	Macaden	= 0x80000000,
+#define AE	0x80000000
 	Rcvintren	=	0x00000040
 };
 
@@ -67,8 +68,9 @@ initmmr()
 	rintren = (u32 *)(base0 + Mmintren);
 	ropmod = (u32 *)(base0 + Mmopmod);
 
-	*rmacad0h = Macaden | MACADDRH;
+	*rmacad0h = AE | MACADDRH;
 	*rmacad0l = MACADDRL;
+	*rmacconf = ethdefmcnf(*rmacconf);
 
 	seroutf("MAC Configuration register(0x%X)\r\n", *rmacconf);
 	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
