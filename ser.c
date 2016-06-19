@@ -123,3 +123,9 @@ detmmap()
 	inl(PCIC_DATA_PORT, &u);
 	ruart = (struct Ruart *)u;
 }
+
+u32
+serdbgaddr()
+{
+	return (u32)ruart;
+}

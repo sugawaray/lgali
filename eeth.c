@@ -43,31 +43,51 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 static u32 base0;
 static volatile u32 *rmacconf;
 static volatile u32 *rmacff;
+static volatile u32 *rgmiiadd;
+static volatile u32 *rgmiidat;
+static volatile u32 *rmacdbg;
 static volatile u32 *rmacad0h;
 static volatile u32 *rmacad0l;
+static volatile u32 *rstatus;
 static volatile u32 *rintren;
 static volatile u32 *rsiv;
 static volatile u32 *rrdsclad;
 static volatile u32 *rtdsclad;
 static volatile u32 *ropmod;
+static volatile u32 *rmfroc;
+static volatile u32 *rcurrdsc;
+static volatile u32 *rcurrbuf;
 
 enum {
 	Busmasen	=	0x0004,
 	Memspcen	=	0x0002,
 
 #define AE	0x80000000
-	Rcvintren	=	0x00000040
+	Rcvintren	=	0x00000040,
+	Mgmiipa	=	0x0000F800,
+	Mgmiireg	=	0x000007C0,
+	Mcsrclkrng	=	0x0000003C,
+	Csrclkrng	=	0x00000004,
+	Gmiiwrite	=	0x00000002,
+	Gmiibusy	=	0x00000001
 };
 
 enum {
 	Mmmacconf	= 0x0000,
 	Mmmacff	= 0x0004,
+	Mmgmiiadd	= 0x0010,
+	Mmgmiidat	= 0x0014,
+	Mmmacdbg	= 0x0024,
 	Mmmacad0h	= 0x0040,
 	Mmmacad0l	= 0x0044,
 	Mmrdsclad	= 0x100C,
 	Mmtdsclad	= 0x1010,
+	Mmstatus	= 0x1014,
 	Mmopmod	= 0x1018,
-	Mmintren	= 0x101C
+	Mmmfroc	= 0x1020,
+	Mmintren	= 0x101C,
+	Mmcurrdsc	= 0x104C,
+	Mmcurrbuf	= 0x1054
 };
 static
 void
@@ -87,12 +107,19 @@ initmmr()
 {
 	rmacconf = (u32 *)(base0 + Mmmacconf);
 	rmacff = (u32 *)(base0 + Mmmacff);
+	rgmiiadd = (u32 *)(base0 + Mmgmiiadd);
+	rgmiidat = (u32 *)(base0 + Mmgmiidat);
+	rmacdbg = (u32 *)(base0 + Mmmacdbg);
 	rmacad0h = (u32 *)(base0 + Mmmacad0h);
 	rmacad0l = (u32 *)(base0 + Mmmacad0l);
+	rstatus = (u32 *)(base0 + Mmstatus);
 	rintren = (u32 *)(base0 + Mmintren);
 	rrdsclad = (u32 *)(base0 + Mmrdsclad);
 	rtdsclad = (u32 *)(base0 + Mmtdsclad);
 	ropmod = (u32 *)(base0 + Mmopmod);
+	rcurrdsc = (u32 *)(base0 + Mmcurrdsc);
+	rmfroc = (u32 *)(base0 + Mmmfroc);
+	rcurrbuf = (u32 *)(base0 + Mmcurrbuf);
 
 	*rmacad0h = AE | MACADDRH;
 	*rmacad0l = MACADDRL;
@@ -106,6 +133,9 @@ initmmr()
 	while (*ropmod & Mst)
 		;
 	*rtdsclad = Tdsclbase;
+
+	*ropmod = (~0x00000018 & *ropmod) | 0x00000008;
+	*ropmod = (~0x000000C0 & *ropmod) | 0x000000C0;
 
 	seroutf("MAC Configuration register(0x%X)\r\n", *rmacconf);
 	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
@@ -144,6 +174,58 @@ initintr()
 	*rsiv = *rsiv | APICEN | VEC;
 }
 
+static
+void
+initdma()
+{
+	mmemset((void *)Rbuf1ad, 0, Rbuf1sz);
+	mmemset((void *)Rbuf2ad, 0, Rbuf2sz);
+	mmemset((void *)Tbuf1ad, 0, Tbuf1sz);
+	mmemset((void *)Tbuf2ad, 0, Tbuf2sz);
+	rdescinit(rdesc, (void *)Rbuf1ad, Rbuf1sz, (void *)Rbuf2ad, Rbuf2sz);
+	tdescinit(tdesc, (void *)Tbuf1ad, Tbuf1sz, (void *)Tbuf2ad, Tbuf2sz);
+	rdesc->status = rdesc->status | 0x80000000;
+}
+
+static
+void
+act()
+{
+	*ropmod = *ropmod | Msr;
+}
+
+static
+void
+exammmi()
+{
+	int i;
+	for (i = 0; i < 32; ++i) {
+		while (*rgmiiadd & Gmiibusy)
+			;
+		*rgmiiadd = Gmiibusy;
+		*rgmiiadd |= (i << 10) & Mgmiipa;
+		*rgmiiadd |= Mgmiireg & 0;
+		*rgmiiadd |= Csrclkrng;
+		*rgmiidat = 0x00000120;
+		while (*rgmiiadd & Gmiibusy)
+			;
+		*rgmiidat = 0;
+	}
+	for (i = 0; i < 32; ++i) {
+		while (*rgmiiadd & Gmiibusy)
+			;
+		*rgmiiadd = Gmiibusy;
+		*rgmiiadd |= (i << 10) & Mgmiipa;
+		*rgmiiadd |= Mgmiireg & (1 << 5);
+		*rgmiiadd |= Csrclkrng;
+		while (*rgmiiadd & Gmiibusy)
+			;
+		seroutf("GMII status]0x%X,0x%X\r\n", i, *rgmiidat);
+	}
+}
+
+
+
 
 static
 void
@@ -161,11 +243,14 @@ intrinit()
 	idtrsetad(rec, oneth);
 	initpcic();
 	init1();
+	initdma();
 	initmmr();
+	exammmi();
 	initintr();
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
 	sti();
+	act();
 }
 
 int
@@ -188,10 +273,23 @@ main()
 	pcicpr();
 	intrinit();
 
+	seroutf("ser addr(0x%X)\r\n", serdbgaddr());
 	for (;;) {
 #if 1
 		asm ("int $0x30\n\t");
-		ledmemit(10, 1);
+#if 1
+		seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n", *rmacdbg, *rstatus, *ropmod, *rmfroc);
+		seroutf("CRD,CRB]0x%X,0x%X\r\n", *rcurrdsc, *rcurrbuf);
+		seroutf("Start of Receive List] 0x%X\r\n", *rrdsclad);
+		seroutf("Rdesc]0x%X,0x%X,0x%X,0x%X,0x%X\r\n",
+			rdesc->status,
+			rdesc->des1l,
+			rdesc->des1h,
+			rdesc->b1addr,
+			rdesc->b2addr
+			);
+		seroutf("b11st4]0x%X\r\n", *(u32*)rdesc->b1addr);
+#endif
 #endif
 		wait();
 		wait();

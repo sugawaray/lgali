@@ -7,7 +7,10 @@
 
 #define S(x)	#x
 #define A(e)	do { if (!(e)) { testerror(S(e)); } } while (0)
-#define AEQ(x, a)	do { if ((x) != (a)) { testerror(testmeqh((x), (a))); } } while (0)
+#define AEQ(x, a)	\
+	do { if ((x) != (a)) {	\
+		testerror(testmsg("0x%08X != 0x%08X", (a), (x)));	\
+	} } while (0)
 
 static
 void
