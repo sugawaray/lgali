@@ -4,6 +4,7 @@
 #include <intr.h>
 #include <led.h>
 #include <lib.h>
+#include <mii.h>
 #include <ser.h>
 
 #define IDDEV	20
@@ -67,7 +68,7 @@ enum {
 	Mgmiipa	=	0x0000F800,
 	Mgmiireg	=	0x000007C0,
 	Mcsrclkrng	=	0x0000003C,
-	Csrclkrng	=	0x00000004,
+	Csrclkrng	=	0x00000008,
 	Gmiiwrite	=	0x00000002,
 	Gmiibusy	=	0x00000001
 };
@@ -199,10 +200,23 @@ void
 exammmi()
 {
 	int i;
+	miisetradd(base0 + Mmgmiiadd);
+	miisetrdat(base0 + Mmgmiidat);
+	for (i = 2; i < 3; ++i) {
+		miiresetphy(i);
+		seroutf("miiresetphy(0x%X) done\r\n", i);
+		miiinit(i);
+	}
+	wait();
+	for (i = 0; i < 32; ++i) {
+		if (miitestphy(i))
+			seroutf("miitestphy success(0x%X)\r\n", i);
+	}
 	for (i = 0; i < 32; ++i) {
 		while (*rgmiiadd & Gmiibusy)
 			;
 		*rgmiiadd = Gmiibusy;
+		*rgmiiadd |= Gmiiwrite;
 		*rgmiiadd |= (i << 10) & Mgmiipa;
 		*rgmiiadd |= Mgmiireg & 0;
 		*rgmiiadd |= Csrclkrng;
@@ -215,6 +229,7 @@ exammmi()
 		while (*rgmiiadd & Gmiibusy)
 			;
 		*rgmiiadd = Gmiibusy;
+		*rgmiiadd &= ~Gmiiwrite;
 		*rgmiiadd |= (i << 10) & Mgmiipa;
 		*rgmiiadd |= Mgmiireg & (1 << 5);
 		*rgmiiadd |= Csrclkrng;
