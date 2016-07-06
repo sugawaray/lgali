@@ -2,7 +2,7 @@
 .SUFFIXES: .o .to .s
 
 TGTOBJS = eintr.o eled.o emc.o eser.o eeth.o
-TESTENTS = tintr.to tethim.to
+TESTENTS = tintr.to tethim.to tmii.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
 OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o
@@ -24,3 +24,7 @@ $(TESTTGTS): $(TESTENTS) $(TOBJS)
 
 .s.to:
 	$(AS) -o $@ $< $(TASFLAGS)
+
+mii.o: mii.c miiim.h
+mii.to: mii.c miiim.h
+tmii.to: tmii.c miiim.h

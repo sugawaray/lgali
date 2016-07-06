@@ -208,6 +208,7 @@ exammmi()
 		miiinit(i);
 	}
 	wait();
+#if 0
 	for (i = 0; i < 32; ++i) {
 		if (miitestphy(i))
 			seroutf("miitestphy success(0x%X)\r\n", i);
@@ -237,6 +238,7 @@ exammmi()
 			;
 		seroutf("GMII status]0x%X,0x%X\r\n", i, *rgmiidat);
 	}
+#endif
 }
 
 

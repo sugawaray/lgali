@@ -1,3 +1,4 @@
+#include "miiim.h"
 #include <mii.h>
 #include <ser.h>
 
@@ -8,13 +9,28 @@ enum {
 	Csrclkrng	=	0x00000008,
 	Gmiiwrite	=	0x00000002,
 	Gmiibusy	=	0x00000001,
-	Offr	= 0x06,
-	Rctl	= 0x00,
-	Rstatus	= 0x01,
+	Offr	=	0x06,
+	Rctl	=	0x00,
+	Rstatus	=	0x01,
+	Ranadv	=	0x04,
+	Ranlpa	=	0x05,
 	Mcreset	=	0x00008000,
 	Mcanen	=	0x00001000,
 	Mcrsan	=	0x00000200,
-	Msana	=	0x0008
+	Msana	=	0x0008,
+
+	Oselector	=	0x0,
+	Mselector	=	0x001F,
+	Sel8023	=	0x0001,
+	Otch	=	0x5,
+	Mtcha	=	0x0FE0,
+	Tch10full	=	0x2,
+	Oxnp	=	0xC,
+	Mxnp	=	0xC,
+	Oack	=	0xE,
+	Mack	=	0xE,
+
+	Mstancmp	=	0x0020
 };
 
 #define R(o)	(*(volatile u32 *)(o))
@@ -138,11 +154,24 @@ miiinit(int pa)
 	v = (v & Msana) != 0;
 	seroutf("PHY(0x%X) Auto negotiation ability(0x%X)\r\n", pa, v);
 
+	readr(pa, Ranadv, &v);
+	writer(pa, Ranadv, defanadv(v));
+
 	writer(pa, Rctl, Mcrsan | Mcanen);
 	do {
 		readr(pa, Rctl, &v);
 	} while ((v & Mcrsan) != 0);
 	seroutf("PHY(0x%X) Auto negotiation done\r\n", pa);
+
+	do {
+		v = 0;
+		readr(pa, Rstatus, &v);
+	} while (!(v & Mstancmp));
+	seroutf("PHY(0x%X) status(0x%X)\r\n", pa, v);
+
+	v = 0;
+	readr(pa, Ranlpa, &v);
+	seroutf("PHY(0x%X) auto neg link partner ability(0x%X)\r\n", pa, v);
 }
 
 
@@ -157,4 +186,13 @@ miitestphy(int pa)
 	r = ((v & (1 << 14 | 1 << 10)) == (1 << 14 | 1 << 10));
 	writectl(pa, v & ~(1 << 14 | 1 << 10));
 	return r;
+}
+
+u16
+defanadv(u16 def)
+{
+	def &= ~(Mselector | Mtcha);
+	def |= (Sel8023 << Oselector) & Mselector;
+	def |= (Tch10full << Otch) & Mtcha;
+	return def;
 }
