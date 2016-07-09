@@ -253,18 +253,17 @@ main()
 			;
 	}
 	serout("serial port initialization has done.\r\n");
-	serout("ethernet pci configuration registers.\r\n");
 	pcicsetdev(IDDEV);
 	pcicsetfn(IDFUN);
 	pcicpr();
 	intrinit();
 
-	seroutf("ser addr(0x%X)\r\n", serdbgaddr());
 	for (;;) {
-#if 1
-		asm ("int $0x30\n\t");
-#if 1
-		seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n", *rmacdbg, *rstatus, *ropmod, *rmfroc);
+		seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n",
+			*rmacdbg,
+			*rstatus,
+			*ropmod,
+			*rmfroc);
 		seroutf("CRD,CRB]0x%X,0x%X\r\n", *rcurrdsc, *rcurrbuf);
 		seroutf("Start of Receive List] 0x%X\r\n", *rrdsclad);
 		seroutf("Rdesc]0x%X,0x%X,0x%X,0x%X,0x%X\r\n",
@@ -275,8 +274,6 @@ main()
 			rdesc->b2addr
 			);
 		seroutf("b11st4]0x%X\r\n", *(u32*)rdesc->b1addr);
-#endif
-#endif
 		wait();
 		wait();
 	}

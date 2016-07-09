@@ -124,8 +124,3 @@ detmmap()
 	ruart = (struct Ruart *)u;
 }
 
-u32
-serdbgaddr()
-{
-	return (u32)ruart;
-}
