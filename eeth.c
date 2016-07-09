@@ -208,37 +208,6 @@ exammmi()
 		miiinit(i);
 	}
 	wait();
-#if 0
-	for (i = 0; i < 32; ++i) {
-		if (miitestphy(i))
-			seroutf("miitestphy success(0x%X)\r\n", i);
-	}
-	for (i = 0; i < 32; ++i) {
-		while (*rgmiiadd & Gmiibusy)
-			;
-		*rgmiiadd = Gmiibusy;
-		*rgmiiadd |= Gmiiwrite;
-		*rgmiiadd |= (i << 10) & Mgmiipa;
-		*rgmiiadd |= Mgmiireg & 0;
-		*rgmiiadd |= Csrclkrng;
-		*rgmiidat = 0x00000120;
-		while (*rgmiiadd & Gmiibusy)
-			;
-		*rgmiidat = 0;
-	}
-	for (i = 0; i < 32; ++i) {
-		while (*rgmiiadd & Gmiibusy)
-			;
-		*rgmiiadd = Gmiibusy;
-		*rgmiiadd &= ~Gmiiwrite;
-		*rgmiiadd |= (i << 10) & Mgmiipa;
-		*rgmiiadd |= Mgmiireg & (1 << 5);
-		*rgmiiadd |= Csrclkrng;
-		while (*rgmiiadd & Gmiibusy)
-			;
-		seroutf("GMII status]0x%X,0x%X\r\n", i, *rgmiidat);
-	}
-#endif
 }
 
 
