@@ -1,6 +1,7 @@
 *.o
 *.to
 /eintr
+/eioapic
 /eled
 /emc
 /eser

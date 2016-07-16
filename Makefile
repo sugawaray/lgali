@@ -1,11 +1,11 @@
 .POSIX:
 .SUFFIXES: .o .to .s
 
-TGTOBJS = eintr.o eled.o emc.o eser.o eeth.o
+TGTOBJS = eintr.o eled.o emc.o eser.o eeth.o eioapic.o
 TESTENTS = tintr.to tethim.to tmii.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
-OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o
+OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o
 TOBJS = $(OBJS:.o=.to)
 
 all: $(TARGETS) $(TESTTGTS)
@@ -25,6 +25,8 @@ $(TESTTGTS): $(TESTENTS) $(TOBJS)
 .s.to:
 	$(AS) -o $@ $< $(TASFLAGS)
 
+eioapic.c: include/quark.h include/ser.h
 mii.o: mii.c miiim.h
 mii.to: mii.c miiim.h
 tmii.to: tmii.c miiim.h
+ioapic.o: ioapic.c include/ioapic.h
