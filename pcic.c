@@ -74,20 +74,71 @@ pcicr32(u32 off, u32 *v)
 void
 pcicw16(u32 off, u16 v)
 {
+	u32 v32;
+
+	pcicr32(off, &v32);
+	if (off & 0x2)
+		v32 = (v32 & 0x0000FFFF) | (v << 0x10);
+	else
+		v32 = (v32 & 0xFFFF0000) | v;
 	outl(PCIC_ADDR_PORT, ADDR(off));
-	outw(PCIC_DATA_PORT, v);
+	outl(PCIC_DATA_PORT, v32);
+}
+
+void
+pcicw8(u32 off, u8 v)
+{
+	u32 v32;
+
+	pcicr32(off, &v32);
+	switch (off % 4) {
+	case 0:
+		v32 = (v32 & 0xFFFFFF00) | v;
+		break;
+	case 1:
+		v32 = (v32 & 0xFFFF00FF) | (v << 0x8);
+		break;
+	case 2:
+		v32 = (v32 & 0xFF00FFFF) | (v << 0x10);
+		break;
+	case 3:
+		v32 = (v32 & 0x00FFFFFF) | (v << 0x18);
+		break;
+	}
+	outl(PCIC_ADDR_PORT, ADDR(off));
+	outl(PCIC_DATA_PORT, v32);
 }
 
 void
 pcicr16(u32 off, u16 *v)
 {
-	outl(PCIC_ADDR_PORT, ADDR(off));
-	inw(PCIC_DATA_PORT, v);
+	u32 v32;
+
+	pcicr32(off, &v32);
+	if (off & 0x2)
+		*v = 0xFFFF & (v32 >> 0x10);
+	else
+		*v = 0xFFFF & v32;
 }
 
 void
 pcicr8(u32 off, u8 *v)
 {
-	outl(PCIC_ADDR_PORT, ADDR(off));
-	inb(PCIC_DATA_PORT, v);
+	u32 v32;
+
+	pcicr32(off, &v32);
+	switch (off % 4) {
+	case 0:
+		*v = 0xFF & v32;
+		break;
+	case 1:
+		*v = 0xFF & (v32 >> 0x8);
+		break;
+	case 2:
+		*v = 0xFF & (v32 >> 0x10);
+		break;
+	case 3:
+		*v = 0xFF & (v32 >> 0x18);
+		break;
+	}
 }

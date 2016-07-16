@@ -9,6 +9,8 @@
 .globl	lidt
 .globl	sidt
 .globl	ic8259_init
+.globl	cpuid
+.globl	eflags
 .globl	ontimer
 .globl	ontimer2
 .globl	ontrap
@@ -180,3 +182,18 @@ oneth:
 	movl	$0x30,	(%edx)
 	popa
 	iret
+cpuid:
+	pushl	%ebp
+	movl	%esp,	%ebp
+	push	%ebx
+	mov	$0x01,	%eax
+	cpuid
+	shr	$0x18,	%ebx
+	mov	%ebx,	%eax
+	popl	%ebx
+	popl	%ebp
+	ret
+eflags:
+	pushf
+	pop	%eax
+	ret
