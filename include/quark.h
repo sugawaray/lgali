@@ -5,7 +5,7 @@
 #define PCIC_DATA_PORT	0xCFC
 
 #define PCICADDR(b, d, f, o)	\
-	(0x80000000 | ((b) << 16) | ((d) << 11) | ((f) << 8) | (o))
+	(0x80000000 | ((b) << 16) | ((d) << 11) | ((f) << 8) | ((o) & 0xFC))
 
 typedef unsigned char	u8;
 typedef unsigned short	u16;
@@ -26,6 +26,8 @@ void sidt(char *d);
 void ic8259_init(int off);
 void cli();
 void sti();
+u32 cpuid();
+u32 eflags();
 
 void wait();
 
@@ -39,12 +41,14 @@ void wait();
 #define POFFMSGADDR	0xA4
 #define POFFMSGDATA	0xA8
 #define POFFVECMASK	0xAC
+#define POFFVECPEND	0xB0
 
 void pcicsetdev(int dev);
 void pcicsetfn(int fn);
 void pcicpr();
 void pcicw32(u32 off, u32 v);
 void pcicw16(u32 off, u16 v);
+void pcicw8(u32 off, u8 v);
 void pcicr32(u32 off, u32 *v);
 void pcicr16(u32 off, u16 *v);
 void pcicr8(u32 off, u8 *v);

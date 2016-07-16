@@ -64,8 +64,3 @@ idtrsetssel(struct Idtrec *o, u8 v)
 	o->ssel = v << 0x3;
 }
 
-void
-oneth1()
-{
-	ledmemit(2, 1);
-}

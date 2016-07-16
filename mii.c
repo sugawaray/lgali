@@ -6,7 +6,11 @@ enum {
 	Mgmiipa	=	0x0000F800,
 	Mgmiireg	=	0x000007C0,
 	Mcsrclkrng	=	0x0000003C,
+#if 1
 	Csrclkrng	=	0x00000008,
+#else
+	Csrclkrng	=	0x00000004,
+#endif
 	Gmiiwrite	=	0x00000002,
 	Gmiibusy	=	0x00000001,
 	Offr	=	0x06,
@@ -14,6 +18,9 @@ enum {
 	Rstatus	=	0x01,
 	Ranadv	=	0x04,
 	Ranlpa	=	0x05,
+	Rphysts	=	0x10,
+	Rmicr	=	0x11,
+	Rrbr	=	0x17,
 	Mcreset	=	0x00008000,
 	Mcanen	=	0x00001000,
 	Mcrsan	=	0x00000200,
@@ -30,7 +37,9 @@ enum {
 	Oack	=	0xE,
 	Mack	=	0xE,
 
-	Mstancmp	=	0x0020
+	Mstancmp	=	0x0020,
+
+	Vrbr	=	0x0020
 };
 
 #define R(o)	(*(volatile u32 *)(o))
@@ -40,9 +49,10 @@ static u32 offdat;
 
 static
 void
-readr(int pa, int reg, u32 *dat)
+readr(int pa, int reg, u16 *dat)
 {
-	u32 a, b;
+	u32 a;
+	u16 b;
 
 	a = 0;
 	a |= (pa << 10) & Mgmiipa;
@@ -50,17 +60,17 @@ readr(int pa, int reg, u32 *dat)
 	a |= Csrclkrng;
 	a |= Gmiibusy;
 	while (R(offadd) & Gmiibusy)
-		;
+		nop();
 	R(offadd) = a;
 	while (R(offadd) & Gmiibusy)
-		;
+		nop();
 	b = R(offdat);
 	*dat = b;
 }
 
 static
 void
-writer(int pa, int reg, u32 dat)
+writer(int pa, int reg, u16 dat)
 {
 	u32 a;
 
@@ -71,21 +81,22 @@ writer(int pa, int reg, u32 dat)
 	a |= Csrclkrng;
 	a |= Gmiibusy;
 	while (R(offadd) & Gmiibusy)
-		;
+		nop();
 	R(offadd) = a;
 	while (R(offadd) & Gmiibusy)
-		;
+		nop();
 	R(offdat) = dat;
 	R(offadd) |= Gmiibusy;
 	while (R(offadd) & Gmiibusy)
-		;
+		nop();
 }
 
 static
 void
-readctl(int pa, u32 *dat)
+readctl(int pa, u16 *dat)
 {
-	u32 a, b;
+	u32 a;
+	u16 b;
 
 	a = 0;
 	a |= (pa << 10) & Mgmiipa;
@@ -102,7 +113,7 @@ readctl(int pa, u32 *dat)
 
 static
 void
-writectl(int pa, u32 dat)
+writectl(int pa, u16 dat)
 {
 	u32 a;
 
@@ -137,18 +148,21 @@ miisetrdat(u32 v)
 void
 miiresetphy(int pa)
 {
-	u32 v;
+	u16 v;
 
-	writectl(pa, Mcreset);
+	writer(pa, Rctl, Mcreset);
 	do {
-		readctl(pa, &v);
+		readr(pa, Rctl, &v);
 	} while ((v & Mcreset) == 0);
+	wait();
+	writer(pa, Rrbr, Vrbr);
+	wait();
 }
 
 void
 miiinit(int pa)
 {
-	u32 v;
+	u16 v;
 
 	readr(pa, Rstatus, &v);
 	v = (v & Msana) != 0;
@@ -156,6 +170,8 @@ miiinit(int pa)
 
 	readr(pa, Ranadv, &v);
 	writer(pa, Ranadv, defanadv(v));
+
+	wait();
 
 	writer(pa, Rctl, Mcrsan | Mcanen);
 	do {
@@ -172,6 +188,7 @@ miiinit(int pa)
 	v = 0;
 	readr(pa, Ranlpa, &v);
 	seroutf("PHY(0x%X) auto neg link partner ability(0x%X)\r\n", pa, v);
+
 }
 
 
@@ -179,7 +196,7 @@ int
 miitestphy(int pa)
 {
 	int r;
-	u32 v;
+	u16 v;
 
 	writectl(pa, 1 << 14 | 1 << 10);
 	readctl(pa, &v);
@@ -195,4 +212,13 @@ defanadv(u16 def)
 	def |= (Sel8023 << Oselector) & Mselector;
 	def |= (Tch10full << Otch) & Mtcha;
 	return def;
+}
+
+void
+miidbg(int pa)
+{
+	u16 v, v1;
+	readr(pa, Rphysts, &v);
+	readr(pa, Rmicr, &v1);
+	seroutf("PHY S:I]0x%X,0x%X\r\n", v, v1);
 }

@@ -1,4 +1,5 @@
 #include "ethim.h"
+#include <led.h>
 
 enum {
 	Msarc	= 0x70000000,
@@ -84,4 +85,14 @@ tdescinit(struct Tdesc *o, void *b1, int b1sz, void *b2, int b2sz)
 	o->des1l |= Mtdscb1sz & b1sz;
 	o->b1addr = (u32)b1;
 	o->b2addr = (u32)b2;
+}
+
+#define REOI	0xFEE000B0
+#define R2(a)	(*(volatile u32 *)(a))
+void
+oneth1()
+{
+	ledmemit(2, 1);
+	pcicw32(POFFVECPEND, 0);
+	R2(REOI) = 1;
 }

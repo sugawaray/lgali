@@ -2,6 +2,7 @@
 #include "ethim.h"
 #include <quark.h>
 #include <intr.h>
+#include <ioapic.h>
 #include <led.h>
 #include <lib.h>
 #include <mii.h>
@@ -10,21 +11,21 @@
 #define IDDEV	20
 #define IDFUN	6
 
-#define VEC	0x30
-#define SVEC	0x31
+#define VEC	0x41
+#define SVEC	0x40
 
 static struct Idtrec idt[0x100];
 
 enum {
 	Rdsclbase	= 0x100000,
 	Rbuf1ad	= 0x100200,
-	Rbuf1sz	= 0x100,
-	Rbuf2ad	= 0x100300,
+	Rbuf1sz	= 0x200,
+	Rbuf2ad	= 0x100500,
 	Rbuf2sz	= 0x100,
-	Tdsclbase	= 0x100400,
-	Tbuf1ad	= 0x100500,
+	Tdsclbase	= 0x100600,
+	Tbuf1ad	= 0x100700,
 	Tbuf1sz	= 0x100,
-	Tbuf2ad	= 0x100600,
+	Tbuf2ad	= 0x100800,
 	Tbuf2sz	= 0x100
 };
 
@@ -34,11 +35,16 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 
 #define RLAPICID	0xFEE00020
 #define RSIV	0xFEE000F0
+#define RESR	0xFEE00280
+#define REOI	0xFEE000B0
 #define MAPICID 0x07000000
 #define APICEN	0x00000100
 
 #define MSGADDR	0xFEE00000
-#define MSGDATA	(0x00 | VEC)
+#define MSGDATA	(0x0000 | VEC)
+
+#define R(a)	(*(volatile u32 *)(base0 + (a)))
+#define R2(a)	(*(volatile u32 *)(a))
 
 
 static u32 base0;
@@ -49,6 +55,7 @@ static volatile u32 *rgmiidat;
 static volatile u32 *rmacdbg;
 static volatile u32 *rmacad0h;
 static volatile u32 *rmacad0l;
+static volatile u32 *rflowctl;
 static volatile u32 *rstatus;
 static volatile u32 *rintren;
 static volatile u32 *rsiv;
@@ -64,7 +71,7 @@ enum {
 	Memspcen	=	0x0002,
 
 #define AE	0x80000000
-	Rcvintren	=	0x00000040,
+	Rcvintren	=	0x00018140,
 	Mgmiipa	=	0x0000F800,
 	Mgmiireg	=	0x000007C0,
 	Mcsrclkrng	=	0x0000003C,
@@ -78,7 +85,9 @@ enum {
 	Mmmacff	= 0x0004,
 	Mmgmiiadd	= 0x0010,
 	Mmgmiidat	= 0x0014,
+	Mmflowctl	= 0x0018,
 	Mmmacdbg	= 0x0024,
+	Mmacintr	= 0x0038,
 	Mmmacad0h	= 0x0040,
 	Mmmacad0l	= 0x0044,
 	Mmrdsclad	= 0x100C,
@@ -90,11 +99,42 @@ enum {
 	Mmcurrdsc	= 0x104C,
 	Mmcurrbuf	= 0x1054
 };
+
+static
+u8
+rp8(int off)
+{
+	u8 v;
+	pcicr8(off, &v);
+	return v;
+}
+
+static
+u16
+rp16(int off)
+{
+	u16 v;
+	pcicr16(off, &v);
+	return v;
+}
+
+static
+void
+emuint()
+{
+	u32 v32;
+	u16 v16;
+	pcicr32(POFFMSGADDR, &v32);
+	pcicr16(POFFMSGDATA, &v16);
+	*((volatile u32 *)v32) = v16;
+}
+
 static
 void
 initpcic()
 {
 	u32 v32;
+	u16 v16;
 
 	pcicw16(POFFCMD, Busmasen | Memspcen);
 	pcicr32(POFFBAR0, &v32);
@@ -113,6 +153,7 @@ initmmr()
 	rmacdbg = (u32 *)(base0 + Mmmacdbg);
 	rmacad0h = (u32 *)(base0 + Mmmacad0h);
 	rmacad0l = (u32 *)(base0 + Mmmacad0l);
+	rflowctl = (u32 *)(base0 + Mmflowctl);
 	rstatus = (u32 *)(base0 + Mmstatus);
 	rintren = (u32 *)(base0 + Mmintren);
 	rrdsclad = (u32 *)(base0 + Mmrdsclad);
@@ -137,6 +178,11 @@ initmmr()
 
 	*ropmod = (~0x00000018 & *ropmod) | 0x00000008;
 	*ropmod = (~0x000000C0 & *ropmod) | 0x000000C0;
+	*ropmod = (~0x00000040 & *ropmod) | 0x00000040;
+
+	while (*rflowctl & 1)
+		;
+	*rflowctl = 5;
 
 	seroutf("MAC Configuration register(0x%X)\r\n", *rmacconf);
 	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
@@ -146,6 +192,7 @@ static
 void
 init1()
 {
+	u8 v8;
 	u16 v16;
 	u32 *a;
 	u32 v;
@@ -155,7 +202,9 @@ init1()
 	seroutf("APIC ID(0x%X)\r\n", v);
 	v = ((unsigned)(v & MAPICID) >> 0x18);
 	seroutf("MSGADDR VALUE(0x%X)\r\n", MSGADDR | (v << 0xC));
+
 	pcicw32(POFFMSGADDR, MSGADDR | (v << 0xC));
+
 	v = 0;
 	pcicr32(POFFMSGADDR, &v);
 	seroutf("MSGADDR(0x%X)\r\n", v);
@@ -163,6 +212,13 @@ init1()
 	v16 = 0;
 	pcicr16(POFFMSGDATA, &v16);
 	seroutf("MSGDATA(0x%X)\r\n", v16);
+
+	
+	v16 = 0;
+	pcicr16(0x80, &v16);
+	v16 >>= 0x8;
+	seroutf("PTR=>0x%X\r\n", v16);
+	pcicw16(v16 + 2, 0x0101);
 }
 
 static
@@ -172,7 +228,7 @@ initintr()
 	*rintren |= Rcvintren;
 	rsiv = (u32 *)RSIV;
 	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", *rsiv);
-	*rsiv = *rsiv | APICEN | VEC;
+	*rsiv = *rsiv | APICEN | SVEC;
 }
 
 static
@@ -193,6 +249,8 @@ void
 act()
 {
 	*ropmod = *ropmod | Msr;
+	pcicw32(POFFVECPEND, 0);
+	*rmacconf = ethdefmcnf(*rmacconf);
 }
 
 static
@@ -210,9 +268,6 @@ exammmi()
 	wait();
 }
 
-
-
-
 static
 void
 intrinit()
@@ -220,13 +275,31 @@ intrinit()
 	struct Idtrec *rec;
 	char tp[6];
 
-	rec = &idt[VEC];
 	sidt(tp);
 	mmemcpy(idt, *(u32 *)(tp + 2), *(u16 *)tp + 1);
 	cli();
+	*((volatile u32*)RSIV) &= ~APICEN;
+
+	{
+	int i;
+	for (i = VEC; i < 0xFF; ++i) {
+	rec = &idt[i];
 	idtrsetssel(rec, 0x02);
 	idtrsettype(rec, IDTRINTR);
 	idtrsetad(rec, oneth);
+	}
+
+	rec = &idt[VEC];
+	idtrsetssel(rec, 0x02);
+	idtrsettype(rec, IDTRINTR);
+	idtrsetad(rec, oneth);
+
+	rec = &idt[SVEC];
+	idtrsetssel(rec, 0x02);
+	idtrsettype(rec, IDTRINTR);
+	idtrsetad(rec, oneth);
+	}
+
 	initpcic();
 	init1();
 	initdma();
@@ -235,8 +308,8 @@ intrinit()
 	initintr();
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
-	sti();
 	act();
+	sti();
 }
 
 int
@@ -256,9 +329,17 @@ main()
 	pcicsetdev(IDDEV);
 	pcicsetfn(IDFUN);
 	pcicpr();
+	ioapicpri();
 	intrinit();
 
 	for (;;) {
+		seroutf("eflags]0x%X\r\n", eflags());
+		seroutf("CMD]0x%X\r\n", rp16(POFFCMD));
+		seroutf("STATUS]0x%X\r\n", rp16(POFFSTATUS));
+		seroutf("IRR]0x%X\r\n", R2(0xFEE00220));
+		miidbg(2);
+		seroutf("INTLINE]0x%X\r\n", rp8(POFFINTRLINE));
+		seroutf("C:MA]0x%X0x%X%X\r\n", *rmacconf, *rmacad0l, *rmacad0h);
 		seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n",
 			*rmacdbg,
 			*rstatus,
@@ -274,6 +355,11 @@ main()
 			rdesc->b2addr
 			);
 		seroutf("b11st4]0x%X\r\n", *(u32*)rdesc->b1addr);
+		seroutf("b11st4-8]0x%X\r\n", *((u32*)rdesc->b1addr + 1));
+		seroutf("b21st4]0x%X\r\n", *(u32*)rdesc->b2addr);
+		seroutf("b21st4-8]0x%X\r\n", *((u32*)rdesc->b2addr + 1));
+		seroutf("ESR]0x%X\r\n", *(u32*)RESR);
+		seroutf("Interrupt Register]0x%X\r\n", R(Mmacintr));
 		wait();
 		wait();
 	}
