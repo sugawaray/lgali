@@ -44,12 +44,10 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 
 #define R2(a)	(*(volatile u32 *)(a))
 #define MR(a)	(*(volatile u32 *)(base0 + (a)))
+#define LR(a)	(*(volatile u32 *)(a))
 
 
 static u32 base0;
-static volatile u32 *rsiv;
-static volatile u32 *rrdsclad;
-static volatile u32 *rtdsclad;
 static volatile u32 *ropmod;
 static volatile u32 *rmfroc;
 static volatile u32 *rcurrdsc;
@@ -131,8 +129,6 @@ static
 void
 initmmr()
 {
-	rrdsclad = (u32 *)(base0 + Mmrdsclad);
-	rtdsclad = (u32 *)(base0 + Mmtdsclad);
 	ropmod = (u32 *)(base0 + Mmopmod);
 	rcurrdsc = (u32 *)(base0 + Mmcurrdsc);
 	rmfroc = (u32 *)(base0 + Mmmfroc);
@@ -145,11 +141,11 @@ initmmr()
 	*ropmod &= ~Msr;
 	while (*ropmod & Msr)
 		;
-	*rrdsclad = Rdsclbase;
+	MR(Mmrdsclad) = Rdsclbase;
 	*ropmod &= ~Mst;
 	while (*ropmod & Mst)
 		;
-	*rtdsclad = Tdsclbase;
+	MR(Mmtdsclad) = Tdsclbase;
 
 	*ropmod = (~0x00000018 & *ropmod) | 0x00000008;
 	*ropmod = (~0x000000C0 & *ropmod) | 0x000000C0;
@@ -190,9 +186,8 @@ void
 initintr()
 {
 	MR(Mmintren) |= Rcvintren;
-	rsiv = (u32 *)RSIV;
-	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", *rsiv);
-	*rsiv = *rsiv | APICEN | SVEC;
+	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", LR(RSIV));
+	LR(RSIV) |= APICEN | SVEC;
 }
 
 static
@@ -299,7 +294,7 @@ main()
 			*ropmod,
 			*rmfroc);
 		seroutf("CRD,CRB]0x%X,0x%X\r\n", *rcurrdsc, *rcurrbuf);
-		seroutf("Start of Receive List] 0x%X\r\n", *rrdsclad);
+		seroutf("Start of Receive List] 0x%X\r\n", MR(Mmrdsclad));
 		seroutf("Rdesc]0x%X,0x%X,0x%X,0x%X,0x%X\r\n",
 			rdesc->status,
 			rdesc->des1l,
