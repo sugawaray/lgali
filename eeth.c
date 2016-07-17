@@ -25,12 +25,13 @@ enum {
 	Tbuf1ad	= 0x100700,
 	Tbuf1sz	= 0x100,
 	Tbuf2ad	= 0x100800,
-	Tbuf2sz	= 0x100
+	Tbuf2sz	= 0x100,
+
+	Phyaddr	=	0x02
 };
 
 static volatile struct Rdesc *rdesc = Rdsclbase;
 static volatile struct Tdesc *tdesc = Tdsclbase;
-
 
 #define RLAPICID	0xFEE00020
 #define RSIV	0xFEE000F0
@@ -42,17 +43,10 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 #define MSGADDR	0xFEE00000
 #define MSGDATA	(0x0000 | VEC)
 
-#define R2(a)	(*(volatile u32 *)(a))
 #define MR(a)	(*(volatile u32 *)(base0 + (a)))
 #define LR(a)	(*(volatile u32 *)(a))
 
-
 static u32 base0;
-#if 0
-static volatile u32 *rmfroc;
-static volatile u32 *rcurrdsc;
-static volatile u32 *rcurrbuf;
-#endif
 
 enum {
 	Busmasen	=	0x0004,
@@ -130,12 +124,6 @@ static
 void
 initmmr()
 {
-#if 0
-	rcurrdsc = (u32 *)(base0 + Mmcurrdsc);
-	rmfroc = (u32 *)(base0 + Mmmfroc);
-	rcurrbuf = (u32 *)(base0 + Mmcurrbuf);
-#endif
-
 	MR(Mmmacad0h) = AE | MACADDRH;
 	MR(Mmmacad0l) = MACADDRL;
 	MR(Mmmacconf) = ethdefmcnf(MR(Mmmacconf));
@@ -216,17 +204,12 @@ act()
 
 static
 void
-exammmi()
+initmii()
 {
-	int i;
 	miisetradd(base0 + Mmgmiiadd);
 	miisetrdat(base0 + Mmgmiidat);
-	for (i = 2; i < 3; ++i) {
-		miiresetphy(i);
-		seroutf("miiresetphy(0x%X) done\r\n", i);
-		miiinit(i);
-	}
-	wait();
+	miiresetphy(Phyaddr);
+	miiinit(Phyaddr);
 }
 
 static
@@ -255,7 +238,7 @@ intrinit()
 	init1();
 	initdma();
 	initmmr();
-	exammmi();
+	initmii();
 	initintr();
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
@@ -286,7 +269,7 @@ main()
 		seroutf("eflags]0x%X\r\n", eflags());
 		seroutf("CMD]0x%X\r\n", rp16(POFFCMD));
 		seroutf("STATUS]0x%X\r\n", rp16(POFFSTATUS));
-		seroutf("IRR]0x%X\r\n", R2(0xFEE00220));
+		seroutf("IRR]0x%X\r\n", LR(0xFEE00220));
 		miidbg(2);
 		seroutf("INTLINE]0x%X\r\n", rp8(POFFINTRLINE));
 		seroutf("C:MA]0x%X,0x%X%X\r\n", MR(Mmmacconf), MR(Mmmacad0l), MR(Mmmacad0h));
