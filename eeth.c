@@ -47,9 +47,6 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 
 
 static u32 base0;
-static volatile u32 *rflowctl;
-static volatile u32 *rstatus;
-static volatile u32 *rintren;
 static volatile u32 *rsiv;
 static volatile u32 *rrdsclad;
 static volatile u32 *rtdsclad;
@@ -134,9 +131,6 @@ static
 void
 initmmr()
 {
-	rflowctl = (u32 *)(base0 + Mmflowctl);
-	rstatus = (u32 *)(base0 + Mmstatus);
-	rintren = (u32 *)(base0 + Mmintren);
 	rrdsclad = (u32 *)(base0 + Mmrdsclad);
 	rtdsclad = (u32 *)(base0 + Mmtdsclad);
 	ropmod = (u32 *)(base0 + Mmopmod);
@@ -161,12 +155,8 @@ initmmr()
 	*ropmod = (~0x000000C0 & *ropmod) | 0x000000C0;
 	*ropmod = (~0x00000040 & *ropmod) | 0x00000040;
 
-	while (*rflowctl & 1)
-		;
-	*rflowctl = 5;
-
 	seroutf("MAC Configuration register(0x%X)\r\n", MR(Mmmacconf));
-	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
+	seroutf("MM interrupt enable register(0x%X)\r\n", MR(Mmintren));
 }
 
 static
@@ -199,7 +189,7 @@ static
 void
 initintr()
 {
-	*rintren |= Rcvintren;
+	MR(Mmintren) |= Rcvintren;
 	rsiv = (u32 *)RSIV;
 	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", *rsiv);
 	*rsiv = *rsiv | APICEN | SVEC;
@@ -305,7 +295,7 @@ main()
 		seroutf("C:MA]0x%X,0x%X%X\r\n", MR(Mmmacconf), MR(Mmmacad0l), MR(Mmmacad0h));
 		seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n",
 			MR(Mmmacdbg),
-			*rstatus,
+			MR(Mmstatus),
 			*ropmod,
 			*rmfroc);
 		seroutf("CRD,CRB]0x%X,0x%X\r\n", *rcurrdsc, *rcurrbuf);
