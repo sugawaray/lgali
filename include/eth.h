@@ -1,1 +1,2 @@
 void ethinit();
+void ethdbg();

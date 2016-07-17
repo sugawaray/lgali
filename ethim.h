@@ -35,4 +35,3 @@ struct Tdesc {
 void rdescinit(struct Rdesc *o, void *b1, int b1sz, void *b2, int b2sz);
 void tdescinit(struct Tdesc *o, void *b1, int b1sz, void *b2, int b2sz);
 
-void ethdbg();
