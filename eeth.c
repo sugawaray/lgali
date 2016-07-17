@@ -69,6 +69,9 @@ static volatile u32 *rcurrbuf;
 enum {
 	Busmasen	=	0x0004,
 	Memspcen	=	0x0002,
+	Msien	= 0x0001,
+	PerVecMskCap	=	0x0100,
+#define MBAR0ADDR	0xFFFFF000
 
 #define AE	0x80000000
 	Rcvintren	=	0x00018140,
@@ -135,11 +138,15 @@ initpcic()
 {
 	u32 v32;
 	u16 v16;
+	u8 v8;
 
 	pcicw16(POFFCMD, Busmasen | Memspcen);
+
 	pcicr32(POFFBAR0, &v32);
-	v32 &= ~0 << 12;
-	base0 = v32;
+	base0 = v32 & MBAR0ADDR;
+
+	pcicr8(POFFNXTCAPP, &v8);
+	pcicw16(v8 + 2, PerVecMskCap | Msien);
 }
 
 static
@@ -212,13 +219,6 @@ init1()
 	v16 = 0;
 	pcicr16(POFFMSGDATA, &v16);
 	seroutf("MSGDATA(0x%X)\r\n", v16);
-
-	
-	v16 = 0;
-	pcicr16(0x80, &v16);
-	v16 >>= 0x8;
-	seroutf("PTR=>0x%X\r\n", v16);
-	pcicw16(v16 + 2, 0x0101);
 }
 
 static

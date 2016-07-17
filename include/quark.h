@@ -37,6 +37,7 @@ void wait();
 #define POFFBAR0	0x10
 #define POFFINTRLINE	0x3C
 #define POFFINTRPIN	0x3D
+#define POFFNXTCAPP	0x81
 #define POFFMSGCTRL	0xA2
 #define POFFMSGADDR	0xA4
 #define POFFMSGDATA	0xA8
