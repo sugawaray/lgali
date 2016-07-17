@@ -280,15 +280,6 @@ intrinit()
 	cli();
 	*((volatile u32*)RSIV) &= ~APICEN;
 
-	{
-	int i;
-	for (i = VEC; i < 0xFF; ++i) {
-	rec = &idt[i];
-	idtrsetssel(rec, 0x02);
-	idtrsettype(rec, IDTRINTR);
-	idtrsetad(rec, oneth);
-	}
-
 	rec = &idt[VEC];
 	idtrsetssel(rec, 0x02);
 	idtrsettype(rec, IDTRINTR);
@@ -298,7 +289,6 @@ intrinit()
 	idtrsetssel(rec, 0x02);
 	idtrsettype(rec, IDTRINTR);
 	idtrsetad(rec, oneth);
-	}
 
 	initpcic();
 	init1();

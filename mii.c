@@ -86,52 +86,13 @@ writer(int pa, int reg, u16 dat)
 	while (R(offadd) & Gmiibusy)
 		nop();
 	R(offdat) = dat;
+	while (R(offadd) & Gmiibusy)
+		nop();
 	R(offadd) |= Gmiibusy;
 	while (R(offadd) & Gmiibusy)
 		nop();
 }
 
-static
-void
-readctl(int pa, u16 *dat)
-{
-	u32 a;
-	u16 b;
-
-	a = 0;
-	a |= (pa << 10) & Mgmiipa;
-	a |= Csrclkrng;
-	a |= Gmiibusy;
-	while (R(offadd) & Gmiibusy)
-		;
-	R(offadd) = a;
-	while (R(offadd) & Gmiibusy)
-		;
-	b = R(offdat);
-	*dat = b;
-}
-
-static
-void
-writectl(int pa, u16 dat)
-{
-	u32 a;
-
-	a = 0;
-	a |= Gmiiwrite;
-	a |= (pa << 10) & Mgmiipa;
-	a |= Csrclkrng;
-	a |= Gmiibusy;
-	while (R(offadd) & Gmiibusy)
-		;
-	R(offadd) = a;
-	while (R(offadd) & Gmiibusy)
-		;
-	R(offdat) = dat;
-	R(offadd) |= Gmiibusy;
-	while (R(offadd) & Gmiibusy)
-		;
-}
 
 void
 miisetradd(u32 v)
@@ -189,20 +150,6 @@ miiinit(int pa)
 	readr(pa, Ranlpa, &v);
 	seroutf("PHY(0x%X) auto neg link partner ability(0x%X)\r\n", pa, v);
 
-}
-
-
-int
-miitestphy(int pa)
-{
-	int r;
-	u16 v;
-
-	writectl(pa, 1 << 14 | 1 << 10);
-	readctl(pa, &v);
-	r = ((v & (1 << 14 | 1 << 10)) == (1 << 14 | 1 << 10));
-	writectl(pa, v & ~(1 << 14 | 1 << 10));
-	return r;
 }
 
 u16
