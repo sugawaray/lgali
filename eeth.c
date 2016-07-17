@@ -42,15 +42,11 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 #define MSGADDR	0xFEE00000
 #define MSGDATA	(0x0000 | VEC)
 
-#define R(a)	(*(volatile u32 *)(base0 + (a)))
 #define R2(a)	(*(volatile u32 *)(a))
+#define MR(a)	(*(volatile u32 *)(base0 + (a)))
 
 
 static u32 base0;
-static volatile u32 *rmacconf;
-static volatile u32 *rmacff;
-static volatile u32 *rgmiiadd;
-static volatile u32 *rgmiidat;
 static volatile u32 *rmacdbg;
 static volatile u32 *rmacad0h;
 static volatile u32 *rmacad0l;
@@ -141,10 +137,6 @@ static
 void
 initmmr()
 {
-	rmacconf = (u32 *)(base0 + Mmmacconf);
-	rmacff = (u32 *)(base0 + Mmmacff);
-	rgmiiadd = (u32 *)(base0 + Mmgmiiadd);
-	rgmiidat = (u32 *)(base0 + Mmgmiidat);
 	rmacdbg = (u32 *)(base0 + Mmmacdbg);
 	rmacad0h = (u32 *)(base0 + Mmmacad0h);
 	rmacad0l = (u32 *)(base0 + Mmmacad0l);
@@ -160,8 +152,8 @@ initmmr()
 
 	*rmacad0h = AE | MACADDRH;
 	*rmacad0l = MACADDRL;
-	*rmacconf = ethdefmcnf(*rmacconf);
-	*rmacff = ethdefmff(*rmacff);
+	MR(Mmmacconf) = ethdefmcnf(MR(Mmmacconf));
+	MR(Mmmacff) = ethdefmff(MR(Mmmacff));
 	*ropmod &= ~Msr;
 	while (*ropmod & Msr)
 		;
@@ -179,7 +171,7 @@ initmmr()
 		;
 	*rflowctl = 5;
 
-	seroutf("MAC Configuration register(0x%X)\r\n", *rmacconf);
+	seroutf("MAC Configuration register(0x%X)\r\n", MR(Mmmacconf));
 	seroutf("MM interrupt enable register(0x%X, 0x%X)\r\n", rintren, *rintren);
 }
 
@@ -238,7 +230,7 @@ act()
 {
 	*ropmod = *ropmod | Msr;
 	pcicw32(POFFVECPEND, 0);
-	*rmacconf = ethdefmcnf(*rmacconf);
+	MR(Mmmacconf) = ethdefmcnf(MR(Mmmacconf));
 }
 
 static
@@ -307,9 +299,6 @@ main()
 	pcicsetdev(IDDEV);
 	pcicsetfn(IDFUN);
 	pcicpr();
-#if 0
-	ioapicpri();
-#endif
 	intrinit();
 
 	for (;;) {
@@ -319,7 +308,7 @@ main()
 		seroutf("IRR]0x%X\r\n", R2(0xFEE00220));
 		miidbg(2);
 		seroutf("INTLINE]0x%X\r\n", rp8(POFFINTRLINE));
-		seroutf("C:MA]0x%X0x%X%X\r\n", *rmacconf, *rmacad0l, *rmacad0h);
+		seroutf("C:MA]0x%X0x%X%X\r\n", MR(Mmmacconf), *rmacad0l, *rmacad0h);
 		seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n",
 			*rmacdbg,
 			*rstatus,
@@ -339,7 +328,7 @@ main()
 		seroutf("b21st4]0x%X\r\n", *(u32*)rdesc->b2addr);
 		seroutf("b21st4-8]0x%X\r\n", *((u32*)rdesc->b2addr + 1));
 		seroutf("ESR]0x%X\r\n", *(u32*)RESR);
-		seroutf("Interrupt Register]0x%X\r\n", R(Mmacintr));
+		seroutf("Interrupt Register]0x%X\r\n", MR(Mmacintr));
 		wait();
 		wait();
 	}
