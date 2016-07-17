@@ -94,13 +94,20 @@ disintr()
 }
 
 static void act();
+#if 0
 static void initintr();
+#endif
 
 static
 void
 enintr()
 {
+#if 0
 	initintr();
+#endif
+	MR(Mmintren) |= Rcvintren;
+	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", LR(RSIV));
+	LR(RSIV) |= APICEN | SVEC;
 	act();
 	sti();
 }
@@ -165,6 +172,7 @@ initmmr()
 	seroutf("MM interrupt enable register(0x%X)\r\n", MR(Mmintren));
 }
 
+#if 0
 static
 void
 init1()
@@ -190,7 +198,9 @@ init1()
 	pcicr16(POFFMSGDATA, &v16);
 	seroutf("MSGDATA(0x%X)\r\n", v16);
 }
+#endif
 
+#if 0
 static
 void
 initintr()
@@ -198,6 +208,55 @@ initintr()
 	MR(Mmintren) |= Rcvintren;
 	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", LR(RSIV));
 	LR(RSIV) |= APICEN | SVEC;
+}
+#endif
+
+static
+void
+initintr()
+{
+	struct Idtrec *rec;
+	char tp[6];
+#if 0
+	init1();
+#endif
+	u8 v8;
+	u16 v16;
+	u32 *a;
+	u32 v;
+
+	a = (u32 *)RLAPICID;
+	v = *a;
+	seroutf("APIC ID(0x%X)\r\n", v);
+	v = ((unsigned)(v & MAPICID) >> 0x18);
+	seroutf("MSGADDR VALUE(0x%X)\r\n", MSGADDR | (v << 0xC));
+
+	pcicw32(POFFMSGADDR, MSGADDR | (v << 0xC));
+
+	v = 0;
+	pcicr32(POFFMSGADDR, &v);
+	seroutf("MSGADDR(0x%X)\r\n", v);
+	pcicw16(POFFMSGDATA, MSGDATA);
+	v16 = 0;
+	pcicr16(POFFMSGDATA, &v16);
+	seroutf("MSGDATA(0x%X)\r\n", v16);
+
+
+	sidt(tp);
+	mmemcpy(idt, *(u32 *)(tp + 2), *(u16 *)tp + 1);
+
+	rec = &idt[VEC];
+	idtrsetssel(rec, 0x02);
+	idtrsettype(rec, IDTRINTR);
+	idtrsetad(rec, oneth);
+
+	rec = &idt[SVEC];
+	idtrsetssel(rec, 0x02);
+	idtrsettype(rec, IDTRINTR);
+	idtrsetad(rec, oneth);
+
+	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
+	lidt(tp);
 }
 
 static
@@ -234,10 +293,12 @@ initmii()
 
 static
 void
-intrinit()
+init()
 {
+#if 0
 	struct Idtrec *rec;
 	char tp[6];
+#endif
 
 	disintr();
 
@@ -246,13 +307,10 @@ intrinit()
 	initmmr();
 	initmii();
 
+#if 0
 	init1();
 	sidt(tp);
 	mmemcpy(idt, *(u32 *)(tp + 2), *(u16 *)tp + 1);
-#if 0
-	cli();
-	*((volatile u32*)RSIV) &= ~APICEN;
-#endif
 
 	rec = &idt[VEC];
 	idtrsetssel(rec, 0x02);
@@ -264,23 +322,11 @@ intrinit()
 	idtrsettype(rec, IDTRINTR);
 	idtrsetad(rec, oneth);
 
-#if 0
-	initpcic();
-	init1();
-	initdma();
-	initmmr();
-	initmii();
-#endif
-#if 0
-	initintr();
-#endif
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
-	enintr();
-#if 0
-	act();
-	sti();
 #endif
+	initintr();
+	enintr();
 }
 
 int
@@ -300,7 +346,7 @@ main()
 	pcicsetdev(IDDEV);
 	pcicsetfn(IDFUN);
 	pcicpr();
-	intrinit();
+	init();
 
 	for (;;) {
 		seroutf("eflags]0x%X\r\n", eflags());
