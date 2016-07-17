@@ -48,7 +48,6 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 
 
 static u32 base0;
-static volatile u32 *ropmod;
 static volatile u32 *rmfroc;
 static volatile u32 *rcurrdsc;
 static volatile u32 *rcurrbuf;
@@ -129,7 +128,6 @@ static
 void
 initmmr()
 {
-	ropmod = (u32 *)(base0 + Mmopmod);
 	rcurrdsc = (u32 *)(base0 + Mmcurrdsc);
 	rmfroc = (u32 *)(base0 + Mmmfroc);
 	rcurrbuf = (u32 *)(base0 + Mmcurrbuf);
@@ -138,18 +136,18 @@ initmmr()
 	MR(Mmmacad0l) = MACADDRL;
 	MR(Mmmacconf) = ethdefmcnf(MR(Mmmacconf));
 	MR(Mmmacff) = ethdefmff(MR(Mmmacff));
-	*ropmod &= ~Msr;
-	while (*ropmod & Msr)
+	MR(Mmopmod) &= ~Msr;
+	while (MR(Mmopmod) & Msr)
 		;
 	MR(Mmrdsclad) = Rdsclbase;
-	*ropmod &= ~Mst;
-	while (*ropmod & Mst)
+	MR(Mmopmod) &= ~Mst;
+	while (MR(Mmopmod) & Mst)
 		;
 	MR(Mmtdsclad) = Tdsclbase;
 
-	*ropmod = (~0x00000018 & *ropmod) | 0x00000008;
-	*ropmod = (~0x000000C0 & *ropmod) | 0x000000C0;
-	*ropmod = (~0x00000040 & *ropmod) | 0x00000040;
+	MR(Mmopmod) = (~0x00000018 & MR(Mmopmod)) | 0x00000008;
+	MR(Mmopmod) = (~0x000000C0 & MR(Mmopmod)) | 0x000000C0;
+	MR(Mmopmod) = (~0x00000040 & MR(Mmopmod)) | 0x00000040;
 
 	seroutf("MAC Configuration register(0x%X)\r\n", MR(Mmmacconf));
 	seroutf("MM interrupt enable register(0x%X)\r\n", MR(Mmintren));
@@ -207,7 +205,7 @@ static
 void
 act()
 {
-	*ropmod = *ropmod | Msr;
+	MR(Mmopmod) = MR(Mmopmod) | Msr;
 	pcicw32(POFFVECPEND, 0);
 	MR(Mmmacconf) = ethdefmcnf(MR(Mmmacconf));
 }
@@ -291,7 +289,7 @@ main()
 		seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n",
 			MR(Mmmacdbg),
 			MR(Mmstatus),
-			*ropmod,
+			MR(Mmopmod),
 			*rmfroc);
 		seroutf("CRD,CRB]0x%X,0x%X\r\n", *rcurrdsc, *rcurrbuf);
 		seroutf("Start of Receive List] 0x%X\r\n", MR(Mmrdsclad));
