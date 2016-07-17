@@ -115,9 +115,7 @@ miiresetphy(int pa)
 	do {
 		readr(pa, Rctl, &v);
 	} while ((v & Mcreset) == 0);
-	wait();
 	writer(pa, Rrbr, Vrbr);
-	wait();
 }
 
 void
@@ -131,8 +129,6 @@ miiinit(int pa)
 
 	readr(pa, Ranadv, &v);
 	writer(pa, Ranadv, defanadv(v));
-
-	wait();
 
 	writer(pa, Rctl, Mcrsan | Mcanen);
 	do {
@@ -149,7 +145,6 @@ miiinit(int pa)
 	v = 0;
 	readr(pa, Ranlpa, &v);
 	seroutf("PHY(0x%X) auto neg link partner ability(0x%X)\r\n", pa, v);
-
 }
 
 u16
