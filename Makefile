@@ -30,3 +30,6 @@ mii.o: mii.c miiim.h
 mii.to: mii.c miiim.h
 tmii.to: tmii.c miiim.h
 ioapic.o: ioapic.c include/ioapic.h
+ethim.o: ethim.c ethim.h include/eth.h
+ethim.to: ethim.c ethim.h include/eth.h
+eeth.o: eeth.c ethim.h include/eth.h

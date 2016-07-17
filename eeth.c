@@ -1,5 +1,6 @@
 #include "intrim.h"
 #include "ethim.h"
+#include <eth.h>
 #include <quark.h>
 #include <intr.h>
 #include <led.h>
@@ -275,12 +276,17 @@ main()
 			;
 	}
 	serout("serial port initialization has done.\r\n");
+#if 0
 	pcicsetdev(IDDEV);
 	pcicsetfn(IDFUN);
 	pcicpr();
 	init();
+#else
+	ethinit();
+#endif
 
 	for (;;) {
+#if 0
 		seroutf("eflags]0x%X\r\n", eflags());
 		seroutf("CMD]0x%X\r\n", rp16(POFFCMD));
 		seroutf("STATUS]0x%X\r\n", rp16(POFFSTATUS));
@@ -310,6 +316,9 @@ main()
 		seroutf("Interrupt Register]0x%X\r\n", MR(Mmacintr));
 		wait();
 		wait();
+#else
+		ethdbg();
+#endif
 	}
 	return 0;
 }
