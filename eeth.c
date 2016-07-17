@@ -47,9 +47,6 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 
 
 static u32 base0;
-static volatile u32 *rmacdbg;
-static volatile u32 *rmacad0h;
-static volatile u32 *rmacad0l;
 static volatile u32 *rflowctl;
 static volatile u32 *rstatus;
 static volatile u32 *rintren;
@@ -137,9 +134,6 @@ static
 void
 initmmr()
 {
-	rmacdbg = (u32 *)(base0 + Mmmacdbg);
-	rmacad0h = (u32 *)(base0 + Mmmacad0h);
-	rmacad0l = (u32 *)(base0 + Mmmacad0l);
 	rflowctl = (u32 *)(base0 + Mmflowctl);
 	rstatus = (u32 *)(base0 + Mmstatus);
 	rintren = (u32 *)(base0 + Mmintren);
@@ -150,8 +144,8 @@ initmmr()
 	rmfroc = (u32 *)(base0 + Mmmfroc);
 	rcurrbuf = (u32 *)(base0 + Mmcurrbuf);
 
-	*rmacad0h = AE | MACADDRH;
-	*rmacad0l = MACADDRL;
+	MR(Mmmacad0h) = AE | MACADDRH;
+	MR(Mmmacad0l) = MACADDRL;
 	MR(Mmmacconf) = ethdefmcnf(MR(Mmmacconf));
 	MR(Mmmacff) = ethdefmff(MR(Mmmacff));
 	*ropmod &= ~Msr;
@@ -308,9 +302,9 @@ main()
 		seroutf("IRR]0x%X\r\n", R2(0xFEE00220));
 		miidbg(2);
 		seroutf("INTLINE]0x%X\r\n", rp8(POFFINTRLINE));
-		seroutf("C:MA]0x%X0x%X%X\r\n", MR(Mmmacconf), *rmacad0l, *rmacad0h);
+		seroutf("C:MA]0x%X,0x%X%X\r\n", MR(Mmmacconf), MR(Mmmacad0l), MR(Mmmacad0h));
 		seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n",
-			*rmacdbg,
+			MR(Mmmacdbg),
 			*rstatus,
 			*ropmod,
 			*rmfroc);
