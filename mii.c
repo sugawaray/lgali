@@ -86,9 +86,7 @@ writer(int pa, int reg, u16 dat)
 	while (R(offadd) & Gmiibusy)
 		nop();
 	R(offdat) = dat;
-	while (R(offadd) & Gmiibusy)
-		nop();
-	R(offadd) |= Gmiibusy;
+	R(offadd) = a;
 	while (R(offadd) & Gmiibusy)
 		nop();
 }
