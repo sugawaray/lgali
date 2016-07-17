@@ -48,9 +48,11 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 
 
 static u32 base0;
+#if 0
 static volatile u32 *rmfroc;
 static volatile u32 *rcurrdsc;
 static volatile u32 *rcurrbuf;
+#endif
 
 enum {
 	Busmasen	=	0x0004,
@@ -128,9 +130,11 @@ static
 void
 initmmr()
 {
+#if 0
 	rcurrdsc = (u32 *)(base0 + Mmcurrdsc);
 	rmfroc = (u32 *)(base0 + Mmmfroc);
 	rcurrbuf = (u32 *)(base0 + Mmcurrbuf);
+#endif
 
 	MR(Mmmacad0h) = AE | MACADDRH;
 	MR(Mmmacad0l) = MACADDRL;
@@ -290,8 +294,8 @@ main()
 			MR(Mmmacdbg),
 			MR(Mmstatus),
 			MR(Mmopmod),
-			*rmfroc);
-		seroutf("CRD,CRB]0x%X,0x%X\r\n", *rcurrdsc, *rcurrbuf);
+			MR(Mmmfroc));
+		seroutf("CRD,CRB]0x%X,0x%X\r\n", MR(Mmcurrdsc), MR(Mmcurrbuf));
 		seroutf("Start of Receive List] 0x%X\r\n", MR(Mmrdsclad));
 		seroutf("Rdesc]0x%X,0x%X,0x%X,0x%X,0x%X\r\n",
 			rdesc->status,
