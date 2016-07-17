@@ -2,7 +2,6 @@
 #include "ethim.h"
 #include <quark.h>
 #include <intr.h>
-#include <ioapic.h>
 #include <led.h>
 #include <lib.h>
 #include <mii.h>
@@ -119,17 +118,6 @@ rp16(int off)
 	u16 v;
 	pcicr16(off, &v);
 	return v;
-}
-
-static
-void
-emuint()
-{
-	u32 v32;
-	u16 v16;
-	pcicr32(POFFMSGADDR, &v32);
-	pcicr16(POFFMSGDATA, &v16);
-	*((volatile u32 *)v32) = v16;
 }
 
 static
@@ -319,7 +307,9 @@ main()
 	pcicsetdev(IDDEV);
 	pcicsetfn(IDFUN);
 	pcicpr();
+#if 0
 	ioapicpri();
+#endif
 	intrinit();
 
 	for (;;) {
