@@ -86,6 +86,26 @@ enum {
 };
 
 static
+void
+disintr()
+{
+	cli();
+	*((volatile u32*)RSIV) &= ~APICEN;
+}
+
+static void act();
+static void initintr();
+
+static
+void
+enintr()
+{
+	initintr();
+	act();
+	sti();
+}
+
+static
 u8
 rp8(int off)
 {
@@ -219,10 +239,20 @@ intrinit()
 	struct Idtrec *rec;
 	char tp[6];
 
+	disintr();
+
+	initpcic();
+	initdma();
+	initmmr();
+	initmii();
+
+	init1();
 	sidt(tp);
 	mmemcpy(idt, *(u32 *)(tp + 2), *(u16 *)tp + 1);
+#if 0
 	cli();
 	*((volatile u32*)RSIV) &= ~APICEN;
+#endif
 
 	rec = &idt[VEC];
 	idtrsetssel(rec, 0x02);
@@ -234,16 +264,23 @@ intrinit()
 	idtrsettype(rec, IDTRINTR);
 	idtrsetad(rec, oneth);
 
+#if 0
 	initpcic();
 	init1();
 	initdma();
 	initmmr();
 	initmii();
+#endif
+#if 0
 	initintr();
+#endif
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
+	enintr();
+#if 0
 	act();
 	sti();
+#endif
 }
 
 int
