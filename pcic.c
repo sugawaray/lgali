@@ -142,3 +142,49 @@ pcicr8(u32 off, u8 *v)
 		break;
 	}
 }
+
+#define MCR(op, port, off)	((op) << 24 | (port) << 16 | (off) << 8 | 0xf0)
+enum {
+	Omcr	= 0xD0,
+	Omdr	= 0xD4,
+	Opmbr	= 0x10,
+	Opmbw	= 0x11
+};
+
+u32
+mbr(u8 port, u8 off)
+{
+	u32 v;
+
+	v = MCR(Opmbr, port, off);
+	outl(PCIC_ADDR_PORT, PCICADDR(0, 0, 0, Omcr));
+	outl(PCIC_DATA_PORT, v);
+	outl(PCIC_ADDR_PORT, PCICADDR(0, 0, 0, Omdr));
+	inl(PCIC_DATA_PORT, &v);
+	return v;
+}
+
+u32
+mbr1(u8 cmd, u8 port, u8 off)
+{
+	u32 v;
+
+	v = MCR(cmd, port, off);
+	outl(PCIC_ADDR_PORT, PCICADDR(0, 0, 0, Omcr));
+	outl(PCIC_DATA_PORT, v);
+	outl(PCIC_ADDR_PORT, PCICADDR(0, 0, 0, Omdr));
+	inl(PCIC_DATA_PORT, &v);
+	return v;
+}
+
+void
+mbw(u8 port, u8 off, u32 v)
+{
+	u32 d;
+
+	d = MCR(Opmbw, port, off);
+	outl(PCIC_ADDR_PORT, PCICADDR(0, 0, 0, Omcr));
+	outl(PCIC_DATA_PORT, d);
+	outl(PCIC_ADDR_PORT, PCICADDR(0, 0, 0, Omdr));
+	outl(PCIC_DATA_PORT, v);
+}

@@ -54,4 +54,8 @@ void pcicr32(u32 off, u32 *v);
 void pcicr16(u32 off, u16 *v);
 void pcicr8(u32 off, u8 *v);
 
+u32 mbr(u8 port, u8 off);
+u32 mbr1(u8 cmd, u8 port, u8 off);
+void mbw(u8 port, u8 off, u32 v);
+
 #endif
