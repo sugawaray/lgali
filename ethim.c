@@ -112,6 +112,22 @@ oneth1()
 
 static struct Idtrec idt[0x100];
 
+#if 1
+enum {
+	Rdsclbase	= 0x100000,
+	Rbuf1ad	= 0x102000,
+	Rbuf1sz	= 0x800,
+	Rbuf2ad	= 0x102800,
+	Rbuf2sz	= 0x800,
+	Tdsclbase	= 0x101000,
+	Tbuf1ad	= 0x202000,
+	Tbuf1sz	= 0x800,
+	Tbuf2ad	= 0x202800,
+	Tbuf2sz	= 0x800,
+
+	Phyaddr	=	0x02
+};
+#else
 enum {
 	Rdsclbase	= 0x100000,
 	Rbuf1ad	= 0x100200,
@@ -126,6 +142,7 @@ enum {
 
 	Phyaddr	=	0x02
 };
+#endif
 
 static volatile struct Rdesc *rdesc = Rdsclbase;
 static volatile struct Tdesc *tdesc = Tdsclbase;
