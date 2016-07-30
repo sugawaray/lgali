@@ -5,7 +5,13 @@ u32 ethdefmff(u32 orig);
 
 enum {
 	Msr	= 0x00000002,
-	Mst	= 0x00002000
+	Mst	= 0x00002000,
+
+#define RDOWN	0x80000000
+	Rdfs	= 0x00000200,
+	Rdls	= 0x00000100,
+	Mrdfl	= 0x0FFF0000,
+	Ordfl	= 0x10
 };
 
 struct Rdesc {
@@ -35,3 +41,6 @@ struct Tdesc {
 void rdescinit(struct Rdesc *o, void *b1, int b1sz, void *b2, int b2sz);
 void tdescinit(struct Tdesc *o, void *b1, int b1sz, void *b2, int b2sz);
 
+int rdisavail(const volatile struct Rdesc *o);
+int rdflen(const volatile struct Rdesc *o);
+void prrdbuf(const volatile struct Rdesc *o);

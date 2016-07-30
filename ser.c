@@ -4,7 +4,11 @@
 
 #define MMBASE	0x100000
 static u32 mmend;
+#if 0
 static volatile struct Ruart *ruart = (struct Ruart *)MMBASE;
+#else
+volatile struct Ruart *ruart = (struct Ruart *)MMBASE;
+#endif
 
 #define DIVH	0x00
 #define DIVL	0X18
@@ -57,6 +61,7 @@ serinit()
 	return 0;
 }
 
+#if 0
 int
 serout(const char *m)
 {
@@ -68,6 +73,7 @@ serout(const char *m)
 	}
 	return 0;
 }
+#endif
 
 int
 serrcv(char *b, int sz)

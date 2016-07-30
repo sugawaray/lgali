@@ -337,7 +337,7 @@ initdma()
 	mmemset((void *)Tbuf2ad, 0, Tbuf2sz);
 	rdescinit(rdesc, (void *)Rbuf1ad, Rbuf1sz, (void *)Rbuf2ad, Rbuf2sz);
 	tdescinit(tdesc, (void *)Tbuf1ad, Tbuf1sz, (void *)Tbuf2ad, Tbuf2sz);
-	rdesc->status = rdesc->status | 0x80000000;
+	rdesc->status = rdesc->status | RDOWN;
 }
 
 static
@@ -384,36 +384,80 @@ ethinit()
 	init();
 }
 
+void
+prrdbuf(const volatile struct Rdesc *o)
+{
+	int len = rdflen(o);
+	if (len >= 0 && (o->status & Rdls)) {
+		int i;
+		unsigned char *p = (unsigned char *)o->b1addr;
+		for (i = 0; i < len; ++i) {
+			if (i % 0x10 == 0)
+				seroutf("\r\n0x%X\t", i);
+			seroutf("%X ", p[i]);
+		}
+		seroutf("\r\n");
+	}
+}
+
+static
+void
+prrxbufs()
+{
+}
+
 
 void
 ethdbg()
 {
-		seroutf("eflags]0x%X\r\n", eflags());
-		seroutf("CMD]0x%X\r\n", rp16(POFFCMD));
-		seroutf("STATUS]0x%X\r\n", rp16(POFFSTATUS));
-		seroutf("IRR]0x%X\r\n", LR(0xFEE00220));
-		miidbg(2);
-		seroutf("INTLINE]0x%X\r\n", rp8(POFFINTRLINE));
-		seroutf("C:MA]0x%X,0x%X%X\r\n", MR(Mmmacconf), MR(Mmmacad0l), MR(Mmmacad0h));
-		seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n",
-			MR(Mmmacdbg),
-			MR(Mmstatus),
-			MR(Mmopmod),
-			MR(Mmmfroc));
-		seroutf("CRD,CRB]0x%X,0x%X\r\n", MR(Mmcurrdsc), MR(Mmcurrbuf));
-		seroutf("Start of Receive List] 0x%X\r\n", MR(Mmrdsclad));
-		seroutf("Rdesc]0x%X,0x%X,0x%X,0x%X,0x%X\r\n",
-			rdesc->status,
-			rdesc->des1l,
-			rdesc->des1h,
-			rdesc->b1addr,
-			rdesc->b2addr
-			);
-		seroutf("b11st4]0x%X\r\n", *(u32*)rdesc->b1addr);
-		seroutf("b11st4-8]0x%X\r\n", *((u32*)rdesc->b1addr + 1));
-		seroutf("b21st4]0x%X\r\n", *(u32*)rdesc->b2addr);
-		seroutf("b21st4-8]0x%X\r\n", *((u32*)rdesc->b2addr + 1));
-		seroutf("ESR]0x%X\r\n", *(u32*)RESR);
-		seroutf("Interrupt Register]0x%X\r\n", MR(Mmacintr));
-		wait();
+	seroutf("eflags]0x%X\r\n", eflags());
+	seroutf("CMD]0x%X\r\n", rp16(POFFCMD));
+	seroutf("STATUS]0x%X\r\n", rp16(POFFSTATUS));
+	seroutf("IRR]0x%X\r\n", LR(0xFEE00220));
+	miidbg(2);
+	seroutf("INTLINE]0x%X\r\n", rp8(POFFINTRLINE));
+	seroutf("C:MA]0x%X,0x%X%X\r\n", MR(Mmmacconf), MR(Mmmacad0l), MR(Mmmacad0h));
+	seroutf("D:S:O:M]0x%X,0x%X,0x%X,0x%X\r\n",
+		MR(Mmmacdbg),
+		MR(Mmstatus),
+		MR(Mmopmod),
+		MR(Mmmfroc));
+	seroutf("CRD,CRB]0x%X,0x%X\r\n", MR(Mmcurrdsc), MR(Mmcurrbuf));
+	seroutf("Start of Receive List] 0x%X\r\n", MR(Mmrdsclad));
+	seroutf("Rdesc]0x%X,0x%X,0x%X,0x%X,0x%X\r\n",
+		rdesc->status,
+		rdesc->des1l,
+		rdesc->des1h,
+		rdesc->b1addr,
+		rdesc->b2addr
+		);
+	seroutf("b11st4]0x%X\r\n", *(u32*)rdesc->b1addr);
+	seroutf("b11st4-8]0x%X\r\n", *((u32*)rdesc->b1addr + 1));
+	seroutf("b21st4]0x%X\r\n", *(u32*)rdesc->b2addr);
+	seroutf("b21st4-8]0x%X\r\n", *((u32*)rdesc->b2addr + 1));
+	seroutf("ESR]0x%X\r\n", *(u32*)RESR);
+	seroutf("Interrupt Register]0x%X\r\n", MR(Mmacintr));
+	prrxbufs();
+	wait();
+}
+
+int
+rdisavail(const volatile struct Rdesc *o)
+{
+	if (o->status & RDOWN)
+		return 0;
+	else
+		return 1;
+}
+
+int
+rdflen(const volatile struct Rdesc *o)
+{
+	if (rdisavail(o)) {
+		if (o->status & Rdls)
+			return (o->status >> Ordfl) & ((u32)Mrdfl >> Ordfl);
+		else
+			return (o->des1l & Mrdscb1sz) + (o->des1h & Mrdscb2sz);
+	} else
+		return -1;
 }

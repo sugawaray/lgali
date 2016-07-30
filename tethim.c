@@ -59,6 +59,86 @@ ttdescinit()
 	AEQ(0x00100100, o.b2addr);
 }
 
+static
+void
+rdisavailt()
+{
+	struct Rdesc o;
+
+	rdescinit(&o, (void*)0x0, 0x100, (void*)0x100, 0x100);
+	o.status |= RDOWN;
+	AEQ(0, rdisavail(&o));
+}
+
+static
+void
+rdisavail_2t()
+{
+	struct Rdesc o;
+
+	rdescinit(&o, (void*)0x0, 0x100, (void*)0x100, 0x100);
+	o.status &= ~RDOWN;
+	o.status |= Rdfs;
+	o.status |= Rdls;
+	AEQ(1, rdisavail(&o));
+}
+
+static
+void
+rdflen_nat()
+{
+	struct Rdesc o;
+
+	rdescinit(&o, (void*)0x0, 0x100, (void*)0x100, 0x100);
+	o.status |= RDOWN;
+	AEQ(rdflen(&o), -1);
+}
+
+static
+void
+rdflen_fullt()
+{
+	struct Rdesc o;
+
+	rdescinit(&o, (void*)0x0, 0x100, (void*)0x100, 0x200);
+	o.status &= ~RDOWN;
+	o.status |= Rdfs;
+	o.status &= ~Rdls;
+	AEQ(0x300, rdflen(&o));
+}
+
+static
+void
+rdflen_lastt()
+{
+	struct Rdesc o;
+
+	rdescinit(&o, (void*)0x0, 0xF00, (void*)0xF00, 0xF00);
+	o.status &= ~RDOWN;
+	o.status |= Rdfs;
+	o.status |= Rdls;
+	o.status = (o.status & ~Mrdfl) | 0xFFF << Ordfl;
+	AEQ(0x0FFF, rdflen(&o));
+}
+
+static
+void
+prrdbuf_mt()
+{
+	int i;
+	struct Rdesc o;
+	unsigned char buf[0x100];
+
+	for (i = 0; i < sizeof buf / sizeof buf[0]; ++i)
+		buf[i] = i;
+	rdescinit(&o, (void*)buf, sizeof buf, (void*)0x0, 0);
+	o.status &= ~RDOWN;
+	o.status = (o.status & ~Mrdfl) | 0x21 << Ordfl;
+	o.status |= Rdfs;
+	o.status |= Rdls;
+	prrdbuf(&o);
+}
+
 int
 main()
 {
@@ -66,5 +146,11 @@ main()
 	testrun("ethdefmff", defmff);
 	testrun("rdescinit", trdescinit);
 	testrun("tdescinit", ttdescinit);
+	testrun("rdisavail: if (ST(OWN) == 1) 0", rdisavailt);
+	testrun("rdisavail: if (ST(FS) == 1 && ST(LS) == 1) 1", rdisavail_2t);
+	testrun("rdflen: when (!rdisavail) -1", rdflen_nat);
+	testrun("rdflen: when (ST(LS) == 0) sz", rdflen_fullt);
+	testrun("rdflen: when (ST(LS) == 1) fsz", rdflen_lastt);
+	testrun("mt prrdbuf", prrdbuf_mt);
 	return 0;
 }

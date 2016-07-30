@@ -6,15 +6,16 @@ TESTENTS = tintr.to tethim.to tmii.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
 OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o hstbr.o
-TOBJS = $(OBJS:.o=.to)
+HOBJS = serout.o
+TOBJS = serstub.to $(OBJS:.o=.to)
 
 all: $(TARGETS) $(TESTTGTS)
 
 clean:
-	-rm $(TARGETS) $(TGTOBJS) $(OBJS) $(TESTTGTS) $(TESTENTS) $(TOBJS)
+	-rm $(TARGETS) $(TGTOBJS) $(OBJS) $(HOBJS) $(TESTTGTS) $(TESTENTS) $(TOBJS)
 
-$(TARGETS): $(TGTOBJS) $(OBJS)
-	$(LD) -o $@ ${@}.o $(OBJS) $(LDFLAGS)
+$(TARGETS): $(TGTOBJS) $(OBJS) $(HOBJS)
+	$(LD) -o $@ ${@}.o $(OBJS) $(HOBJS) $(LDFLAGS)
 
 $(TESTTGTS): $(TESTENTS) $(TOBJS)
 	$(LD) -o $@ ${@}.to $(TOBJS) $(TLDFLAGS)
@@ -34,3 +35,5 @@ ethim.o: ethim.c ethim.h include/eth.h
 ethim.to: ethim.c ethim.h include/eth.h
 eeth.o: eeth.c ethim.h include/eth.h
 hstbr.o: hstbr.c include/quark.h include/hstbr.h
+serout.o: serout.c include/ser.h serim.h
+serstub.to: serstub.c

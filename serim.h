@@ -14,3 +14,5 @@ struct Ruart {
 	u32 _rsv1;
 	u32 lsr;
 };
+
+extern volatile struct Ruart *ruart;

@@ -27,11 +27,13 @@ main()
 	readhbmm(&hbmm);
 	seroutf("ESRAMCTRL(0x%X)\r\n", hbmm.esramctrl);
 	seroutf("ESRAMPGCTRL_BLOCK(0x%X)\r\n", hbmm.pgctlblk);
+#if 0
 	seroutf("ESRAMPGCTRL\r\n");
 	for (i = 0; i < 128; ++i) {
 		seroutf("0x%X(0x%X), ", i, readesrampgctl(i));
 	}
 	seroutf("\r\n");
+#endif
 	ethinit();
 
 	for (;;) {
