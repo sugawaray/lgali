@@ -404,6 +404,7 @@ static
 void
 prrxbufs()
 {
+	prrdbuf(rdesc);
 }
 
 
