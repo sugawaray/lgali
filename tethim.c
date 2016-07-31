@@ -40,7 +40,7 @@ trdescinit()
 
 	rdescinit(&o, (void*)0x100000, 0x100, (void*)0x100100, 0x200);
 	AEQ(0x0200, o.des1h);
-	AEQ(0x8100, o.des1l);
+	AEQ(0x0100, o.des1l);
 	AEQ(0x00100000, o.b1addr);
 	AEQ(0x00100100, o.b2addr);
 }
@@ -136,7 +136,7 @@ prrdbuf_mt()
 	o.status = (o.status & ~Mrdfl) | 0x21 << Ordfl;
 	o.status |= Rdfs;
 	o.status |= Rdls;
-	prrdbuf(&o);
+	prrdbuf(&o, 1);
 }
 
 int

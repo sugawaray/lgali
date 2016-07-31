@@ -75,7 +75,6 @@ rdescinit(struct Rdesc *o, void *b1, int b1sz, void *b2, int b2sz)
 	o->des1l = 0;
 	o->des1l |= b1sz & Mrdscb1sz;
 	o->des1l &= ~Mrdscrer;
-	o->des1l |= Mrdscrer & 0xFFFF;
 	o->des1h |= b2sz & Mrdscb2sz;
 	o->b1addr = (u32)b1;
 	o->b2addr = (u32)b2;
@@ -115,6 +114,7 @@ static struct Idtrec idt[0x100];
 #if 1
 enum {
 	Rdsclbase	= 0x100000,
+	Rdsz	= 0x10,
 	Rbuf1ad	= 0x102000,
 	Rbuf1sz	= 0x800,
 	Rbuf2ad	= 0x102800,
@@ -125,6 +125,7 @@ enum {
 	Tbuf2ad	= 0x202800,
 	Tbuf2sz	= 0x800,
 
+	Rxblen	= 0x100,
 	Phyaddr	=	0x02
 };
 #else
@@ -327,10 +328,28 @@ initintr()
 	lidt(tp);
 }
 
+#define RDSC(list, i)	((volatile struct Rdesc *)((u32)(list) + (Rdsz * (i))))
 static
 void
 initdma()
 {
+#if 1
+	u32 a1, a2;
+	int i;
+	for (i = 0; i < Rxblen; ++i) {
+		a1 = Rbuf1ad + (Rbuf1sz + Rbuf2sz) * i;
+		mmemset((void *)a1, 0, Rbuf1sz);
+		a2 = Rbuf2ad + (Rbuf1sz + Rbuf2sz) * i;
+		mmemset((void *)a2, 0, Rbuf2sz);
+		rdescinit(RDSC(rdesc, i), (void *)a1, Rbuf1sz, (void *)a2, Rbuf2sz);
+	}
+	RDSC(rdesc, Rxblen - 1)->des1l |= Mrdscrer;
+	for (i = 0; i < Rxblen; ++i)
+		RDSC(rdesc, i)->status = RDSC(rdesc, i)->status | RDOWN;
+	mmemset((void *)Tbuf1ad, 0, Tbuf1sz);
+	mmemset((void *)Tbuf2ad, 0, Tbuf2sz);
+	tdescinit(tdesc, (void *)Tbuf1ad, Tbuf1sz, (void *)Tbuf2ad, Tbuf2sz);
+#else
 	mmemset((void *)Rbuf1ad, 0, Rbuf1sz);
 	mmemset((void *)Rbuf2ad, 0, Rbuf2sz);
 	mmemset((void *)Tbuf1ad, 0, Tbuf1sz);
@@ -338,6 +357,7 @@ initdma()
 	rdescinit(rdesc, (void *)Rbuf1ad, Rbuf1sz, (void *)Rbuf2ad, Rbuf2sz);
 	tdescinit(tdesc, (void *)Tbuf1ad, Tbuf1sz, (void *)Tbuf2ad, Tbuf2sz);
 	rdesc->status = rdesc->status | RDOWN;
+#endif
 }
 
 static
@@ -385,10 +405,11 @@ ethinit()
 }
 
 void
-prrdbuf(const volatile struct Rdesc *o)
+prrdbuf(const volatile struct Rdesc *o, int i)
 {
 	int len = rdflen(o);
 	if (len >= 0 && (o->status & Rdls)) {
+		seroutf("buf[0x%X]\r\n", i);
 		int i;
 		unsigned char *p = (unsigned char *)o->b1addr;
 		for (i = 0; i < len; ++i) {
@@ -404,7 +425,9 @@ static
 void
 prrxbufs()
 {
-	prrdbuf(rdesc);
+	int i;
+	for (i = 0; i < Rxblen; ++i)
+		prrdbuf(RDSC(rdesc, i), i);
 }
 
 

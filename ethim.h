@@ -43,4 +43,4 @@ void tdescinit(struct Tdesc *o, void *b1, int b1sz, void *b2, int b2sz);
 
 int rdisavail(const volatile struct Rdesc *o);
 int rdflen(const volatile struct Rdesc *o);
-void prrdbuf(const volatile struct Rdesc *o);
+void prrdbuf(const volatile struct Rdesc *o, int i);
