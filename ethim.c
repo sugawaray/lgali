@@ -36,6 +36,29 @@ enum {
 	Mtdscb1sz	= 0x1FFF
 };
 
+enum {
+	Mmmacconf	= 0x0000,
+	Mmmacff	= 0x0004,
+	Mmgmiiadd	= 0x0010,
+	Mmgmiidat	= 0x0014,
+	Mmflowctl	= 0x0018,
+	Mmmacdbg	= 0x0024,
+	Mmacintr	= 0x0038,
+	Mmmacad0h	= 0x0040,
+	Mmmacad0l	= 0x0044,
+	Mmrdsclad	= 0x100C,
+	Mmtdsclad	= 0x1010,
+	Mmstatus	= 0x1014,
+	Mmopmod	= 0x1018,
+	Mmmfroc	= 0x1020,
+	Mmintren	= 0x101C,
+	Mmcurrdsc	= 0x104C,
+	Mmcurrbuf	= 0x1054
+};
+
+static u32 base0;
+#define MR(a)	(*(volatile u32 *)(base0 + (a)))
+
 u32
 ethdefmcnf(u32 orig)
 {
@@ -101,6 +124,7 @@ oneth1()
 	ledmemit(2, 1);
 	pcicw32(POFFVECPEND, 0);
 	R2(REOI) = 1;
+	MR(Mmstatus) |= 0x1FFFF;
 }
 
 #define IDDEV	20
@@ -158,10 +182,8 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 #define MSGADDR	0xFEE00000
 #define MSGDATA	(0x0000 | VEC)
 
-#define MR(a)	(*(volatile u32 *)(base0 + (a)))
 #define LR(a)	(*(volatile u32 *)(a))
 
-static u32 base0;
 
 enum {
 	Busmasen	=	0x0004,
@@ -180,6 +202,7 @@ enum {
 	Gmiibusy	=	0x00000001
 };
 
+#if 0
 enum {
 	Mmmacconf	= 0x0000,
 	Mmmacff	= 0x0004,
@@ -199,6 +222,7 @@ enum {
 	Mmcurrdsc	= 0x104C,
 	Mmcurrbuf	= 0x1054
 };
+#endif
 
 static
 void
@@ -409,9 +433,8 @@ prrdbuf(const volatile struct Rdesc *o, int i)
 {
 	int len = rdflen(o);
 	if (len >= 0 && (o->status & Rdls)) {
-		seroutf("buf[0x%X]\r\n", i);
-		int i;
 		unsigned char *p = (unsigned char *)o->b1addr;
+		seroutf("buf[0x%X]\r\n", i);
 		for (i = 0; i < len; ++i) {
 			if (i % 0x10 == 0)
 				seroutf("\r\n0x%X\t", i);
