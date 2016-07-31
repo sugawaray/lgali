@@ -2,7 +2,7 @@
 .SUFFIXES: .o .to .s
 
 TGTOBJS = eintr.o eled.o emc.o eser.o eeth.o eioapic.o
-TESTENTS = tintr.to tethim.to tmii.to
+TESTENTS = tintr.to tethim.to tmii.to tethim_read.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
 OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o hstbr.o
@@ -37,3 +37,4 @@ eeth.o: eeth.c ethim.h include/eth.h
 hstbr.o: hstbr.c include/quark.h include/hstbr.h
 serout.o: serout.c include/ser.h serim.h
 serstub.to: serstub.c
+tethim_read.to: tethim_read.c ethim.h include/quark.h

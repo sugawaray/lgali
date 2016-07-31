@@ -8,6 +8,7 @@
 #include <mii.h>
 #include <ser.h>
 
+#if 0
 enum {
 	Msarc	= 0x70000000,
 	Sarc	= 0x20000000,
@@ -35,6 +36,7 @@ enum {
 	Mtdscb2sz	= 0x1FFF,
 	Mtdscb1sz	= 0x1FFF
 };
+#endif
 
 enum {
 	Mmmacconf	= 0x0000,
@@ -459,4 +461,10 @@ rdflen(const volatile struct Rdesc *o)
 			return (o->des1l & Mrdscb1sz) + (o->des1h & Mrdscb2sz);
 	} else
 		return -1;
+}
+
+ssize_t
+read1(struct Rx *o, int fd, void *buf, size_t nb)
+{
+	return 0;
 }

@@ -44,3 +44,39 @@ void tdescinit(struct Tdesc *o, void *b1, int b1sz, void *b2, int b2sz);
 int rdisavail(const volatile struct Rdesc *o);
 int rdflen(const volatile struct Rdesc *o);
 void prrdbuf(const volatile struct Rdesc *o, int i);
+
+struct Rx {
+	int start;
+	int end;
+	int pos;
+	volatile struct Rdesc *rd;
+};
+ssize_t read1(struct Rx *o, int fildes, void *buf, size_t nbyte);
+
+enum {
+	Msarc	= 0x70000000,
+	Sarc	= 0x20000000,
+	Mjd	= 0x00400000,
+	Jdng	= 0x00400000,
+	Mfes	= 0x00004000,
+	Fes10	= 0x00000000,
+	Mdm	= 0x00000800,
+	Dmfull	= 0x00000800,
+	Mte	= 0x00000008,
+	Te	= 0x00000008,
+	Mre	= 0x00000004,
+	Re	= 0x00000004,
+/* #define AE	0x80000000 */
+#define MRA	0x80000000
+#define RA	0x80000000
+	Mrdscdic	= 0x8000,
+	Mrdscb2sz	= 0x1FFF,
+	Mrdscrer	= 0x8000,
+	Mrdscb1sz	= 0x1FFF,
+	Mtdscic	= 0x40000000,
+	Mtdscls	= 0x20000000,
+	Mtdscfs	= 0x10000000,
+	Mtdscter	= 0x00200000,
+	Mtdscb2sz	= 0x1FFF,
+	Mtdscb1sz	= 0x1FFF
+};
