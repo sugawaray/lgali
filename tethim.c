@@ -3,7 +3,7 @@
 #include "ethim.h"
 #include <nomagicc.h>
 #include <nomagiccu.h>
-#include <stdio.h>
+#include "th.h"
 
 #define S(x)	#x
 #define A(e)	do { if (!(e)) { testerror(S(e)); } } while (0)
