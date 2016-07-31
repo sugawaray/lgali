@@ -135,7 +135,6 @@ oneth1()
 
 static struct Idtrec idt[0x100];
 
-#if 1
 enum {
 	Rdsclbase	= 0x100000,
 	Rdsz	= 0x10,
@@ -152,22 +151,6 @@ enum {
 	Rxblen	= 0x100,
 	Phyaddr	=	0x02
 };
-#else
-enum {
-	Rdsclbase	= 0x100000,
-	Rbuf1ad	= 0x100200,
-	Rbuf1sz	= 0x200,
-	Rbuf2ad	= 0x100500,
-	Rbuf2sz	= 0x100,
-	Tdsclbase	= 0x100600,
-	Tbuf1ad	= 0x100700,
-	Tbuf1sz	= 0x100,
-	Tbuf2ad	= 0x100800,
-	Tbuf2sz	= 0x100,
-
-	Phyaddr	=	0x02
-};
-#endif
 
 static volatile struct Rdesc *rdesc = Rdsclbase;
 static volatile struct Tdesc *tdesc = Tdsclbase;
@@ -202,27 +185,6 @@ enum {
 	Gmiibusy	=	0x00000001
 };
 
-#if 0
-enum {
-	Mmmacconf	= 0x0000,
-	Mmmacff	= 0x0004,
-	Mmgmiiadd	= 0x0010,
-	Mmgmiidat	= 0x0014,
-	Mmflowctl	= 0x0018,
-	Mmmacdbg	= 0x0024,
-	Mmacintr	= 0x0038,
-	Mmmacad0h	= 0x0040,
-	Mmmacad0l	= 0x0044,
-	Mmrdsclad	= 0x100C,
-	Mmtdsclad	= 0x1010,
-	Mmstatus	= 0x1014,
-	Mmopmod	= 0x1018,
-	Mmmfroc	= 0x1020,
-	Mmintren	= 0x101C,
-	Mmcurrdsc	= 0x104C,
-	Mmcurrbuf	= 0x1054
-};
-#endif
 
 static
 void
@@ -357,7 +319,6 @@ static
 void
 initdma()
 {
-#if 1
 	u32 a1, a2;
 	int i;
 	for (i = 0; i < Rxblen; ++i) {
@@ -373,15 +334,6 @@ initdma()
 	mmemset((void *)Tbuf1ad, 0, Tbuf1sz);
 	mmemset((void *)Tbuf2ad, 0, Tbuf2sz);
 	tdescinit(tdesc, (void *)Tbuf1ad, Tbuf1sz, (void *)Tbuf2ad, Tbuf2sz);
-#else
-	mmemset((void *)Rbuf1ad, 0, Rbuf1sz);
-	mmemset((void *)Rbuf2ad, 0, Rbuf2sz);
-	mmemset((void *)Tbuf1ad, 0, Tbuf1sz);
-	mmemset((void *)Tbuf2ad, 0, Tbuf2sz);
-	rdescinit(rdesc, (void *)Rbuf1ad, Rbuf1sz, (void *)Rbuf2ad, Rbuf2sz);
-	tdescinit(tdesc, (void *)Tbuf1ad, Tbuf1sz, (void *)Tbuf2ad, Tbuf2sz);
-	rdesc->status = rdesc->status | RDOWN;
-#endif
 }
 
 static
