@@ -466,5 +466,15 @@ rdflen(const volatile struct Rdesc *o)
 ssize_t
 read1(struct Rx *o, int fd, void *buf, size_t nb)
 {
-	return 0;
+	char *bs, *bd;
+	int i, d;
+	if (o->rd->status & RDOWN)
+		return 0;
+	bs = (char*)o->rd->b1addr;
+	bd = buf;
+	d = (o->rd->status >> Ordfl) & ((unsigned)Mrdfl >> Ordfl);
+	for (i = 0; i < d; ++i) {
+		bd[i] = bs[i];
+	}
+	return d;
 }
