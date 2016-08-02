@@ -4,6 +4,13 @@
 #include "th.h"
 
 #define S(x)	#x
+#define A(e)	\
+do {	\
+	if (!(e)) {	\
+		testerror(S(e));	\
+	}	\
+} while (0)	\
+/**/
 #define AEQ(e, x)	\
 do {	\
 	if ((e) != (x)) {	\
@@ -66,10 +73,35 @@ readabuft()
 	AEQ(0, memcmp(obuf, fi.buf, sizeof obuf));
 }
 
+static
+void
+readabbyszt()
+{
+	int i;
+	ssize_t sz;
+	char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc.des1l |= Mrdscrer;
+	fi.rdsc.status &= ~RDOWN;
+	fi.rdsc.status |= Rdfs | Rdls;
+	fi.rdsc.status &= ~Mrdfl;
+	fi.rdsc.status |= (0x100 << Ordfl) & Mrdfl;
+	for (i = 0; i < sizeof fi.buf; ++i)
+		fi.buf[i] = i;
+	obuf[0xFF] = 0;
+	sz = read1(&fi.rx, -1, obuf, sizeof obuf - 1);
+	AEQ(0xFF, sz);
+	A(memcmp(obuf, fi.buf, 0xFF) == 0);
+	A(memcmp(obuf, fi.buf, 0x100) != 0);
+}
+
 int
 main()
 {
 	testrun("read without any buf", readwoanybuft);
 	testrun("read a buf", readabuft);
+	testrun("read a buf by size", readabbyszt);
 	return 0;
 }

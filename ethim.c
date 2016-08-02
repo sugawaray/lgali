@@ -473,6 +473,8 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 	bs = (char*)o->rd->b1addr;
 	bd = buf;
 	d = (o->rd->status >> Ordfl) & ((unsigned)Mrdfl >> Ordfl);
+	if (nb < d)
+		d = nb;
 	for (i = 0; i < d; ++i) {
 		bd[i] = bs[i];
 	}
