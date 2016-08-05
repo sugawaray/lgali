@@ -20,34 +20,37 @@ do {	\
 /**/
 
 struct Fi {
-	struct Rdesc rdsc;
 	struct Rx rx;
-	unsigned char buf[0x800];
+	struct Rdesc rdsc[2];
+	unsigned char buf[2][0x800];
 };
 
 static
 void
 initfi(struct Fi *o)
 {
-	rdescinit(&o->rdsc, o->buf, sizeof o->buf, 0, 0);
-	o->rx.start = 0;
+	int i;
+
+	for (i = 0; i < sizeof o->rdsc / sizeof o->rdsc[0]; ++i)
+		rdescinit(&o->rdsc[i], o->buf[i], sizeof o->buf[i], 0, 0);
+	o->rx.bp = 0;
 	o->rx.end = 0;
 	o->rx.pos = 0;
-	o->rx.rd = &o->rdsc;
+	o->rx.rd = o->rdsc;
 }
 
 static
 void
-initcompfr(struct Fi *o, int sz)
+initcompfr(struct Fi *o, int b, int sz, int fv)
 {
 	int i;
 
-	o->rdsc.status &= ~RDOWN;
-	o->rdsc.status |= Rdfs | Rdls;
-	o->rdsc.status &= ~Mrdfl;
-	o->rdsc.status |= (sz << Ordfl) & Mrdfl;
-	for (i = 0; i < sizeof o->buf; ++i)
-		o->buf[i] = i;
+	o->rdsc[b].status &= ~RDOWN;
+	o->rdsc[b].status |= Rdfs | Rdls;
+	o->rdsc[b].status &= ~Mrdfl;
+	o->rdsc[b].status |= (sz << Ordfl) & Mrdfl;
+	for (i = 0; i < sizeof o->buf[b]; ++i)
+		o->buf[b][i] = i + fv;
 }
 
 static
@@ -59,8 +62,8 @@ readwoanybuft()
 	char obuf[0x100];
 
 	initfi(&fi);
-	fi.rdsc.status |= RDOWN;
-	fi.rdsc.des1l |= Mrdscrer;
+	fi.rdsc[0].status |= RDOWN;
+	fi.rdsc[0].des1l |= Mrdscrer;
 	sz = read1(&fi.rx, -1, obuf, sizeof obuf);
 	AEQ(0, sz);
 }
@@ -75,16 +78,16 @@ readabuft()
 	struct Fi fi;
 
 	initfi(&fi);
-	fi.rdsc.des1l |= Mrdscrer;
-	fi.rdsc.status &= ~RDOWN;
-	fi.rdsc.status |= Rdfs | Rdls;
-	fi.rdsc.status &= ~Mrdfl;
-	fi.rdsc.status |= (0x100 << Ordfl) & Mrdfl;
-	for (i = 0; i < sizeof fi.buf; ++i)
-		fi.buf[i] = i;
+	fi.rdsc[0].des1l |= Mrdscrer;
+	fi.rdsc[0].status &= ~RDOWN;
+	fi.rdsc[0].status |= Rdfs | Rdls;
+	fi.rdsc[0].status &= ~Mrdfl;
+	fi.rdsc[0].status |= (0x100 << Ordfl) & Mrdfl;
+	for (i = 0; i < sizeof fi.buf[0]; ++i)
+		fi.buf[0][i] = i;
 	sz = read1(&fi.rx, -1, obuf, sizeof obuf);
 	AEQ(0x100, sz);
-	AEQ(0, memcmp(obuf, fi.buf, sizeof obuf));
+	AEQ(0, memcmp(obuf, fi.buf[0], sizeof obuf));
 }
 
 static
@@ -96,13 +99,13 @@ readabbyszt()
 	struct Fi fi;
 
 	initfi(&fi);
-	fi.rdsc.des1l |= Mrdscrer;
-	initcompfr(&fi, 0x100);
+	fi.rdsc[0].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x100, 0);
 	obuf[0xFF] = 0;
 	sz = read1(&fi.rx, -1, obuf, sizeof obuf - 1);
 	AEQ(0xFF, sz);
-	A(memcmp(obuf, fi.buf, 0xFF) == 0);
-	A(memcmp(obuf, fi.buf, 0x100) != 0);
+	A(memcmp(obuf, fi.buf[0], 0xFF) == 0);
+	A(memcmp(obuf, fi.buf[0], 0x100) != 0);
 }
 
 static
@@ -110,17 +113,36 @@ void
 readadvptrt()
 {
 	ssize_t sz;
-	char obuf[0x100];
+	unsigned char obuf[0x100];
 	struct Fi fi;
 
 	initfi(&fi);
-	fi.rdsc.des1l |= Mrdscrer;
-	initcompfr(&fi, 0x100);
+	fi.rdsc[0].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x100, 0);
 	read1(&fi.rx, -1, obuf, 3);
 	obuf[0xFC] = 0xFF;
 	sz = read1(&fi.rx, -1, obuf, 0xFC);
 	AEQ(0xFC, sz);
-	A(memcmp(obuf, fi.buf + 3, 0xFD) == 0);
+	A(memcmp(obuf, fi.buf[0] + 3, 0xFD) == 0);
+}
+
+static
+void
+readfolbuft()
+{
+	ssize_t sz;
+	unsigned char obuf[0x104];
+	struct Fi fi;
+
+	initfi(&fi);
+	initcompfr(&fi, 0, 0x100, 0);
+	initcompfr(&fi, 1, 0x100, 1);
+	fi.rdsc[1].status |= Mrdscrer;
+	read1(&fi.rx, -1, obuf, 0x100);
+	obuf[0x100] = 1;
+	sz = read1(&fi.rx, -1, obuf, 0x100);
+	AEQ(0x100, sz);
+	A(memcmp(&fi.buf[1], obuf, 0x101) == 0);
 }
 
 int
@@ -130,5 +152,6 @@ main()
 	testrun("read a buf", readabuft);
 	testrun("read a buf by size", readabbyszt);
 	testrun("a reading advances the position pointer", readadvptrt);
+	testrun("read the following buf after the curr", readfolbuft);
 	return 0;
 }

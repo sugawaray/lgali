@@ -46,7 +46,7 @@ int rdflen(const volatile struct Rdesc *o);
 void prrdbuf(const volatile struct Rdesc *o, int i);
 
 struct Rx {
-	int start;
+	int bp;
 	int end;
 	int pos;
 	volatile struct Rdesc *rd;

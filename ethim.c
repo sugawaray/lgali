@@ -467,12 +467,12 @@ ssize_t
 read1(struct Rx *o, int fd, void *buf, size_t nb)
 {
 	char *bs, *bd;
-	int i, d;
-	if (o->rd->status & RDOWN)
+	int i, d, fl;
+	if (o->rd[o->bp].status & RDOWN)
 		return 0;
-	bs = (char*)o->rd->b1addr + o->pos;
+	bs = (char*)o->rd[o->bp].b1addr + o->pos;
 	bd = buf;
-	d = (o->rd->status >> Ordfl) & ((unsigned)Mrdfl >> Ordfl);
+	d = fl = (o->rd[o->bp].status >> Ordfl) & ((unsigned)Mrdfl >> Ordfl);
 	d -= o->pos;
 	if (nb < d)
 		d = nb;
@@ -480,5 +480,9 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 		bd[i] = bs[i];
 	}
 	o->pos += d;
+	if (o->pos >= fl) {
+		o->pos = 0;
+		++o->bp;
+	}
 	return d;
 }
