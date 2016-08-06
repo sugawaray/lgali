@@ -489,7 +489,6 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 				else
 					++i;
 			} while (o->bp != i);
-			/* bug */
 			if (fs != -1)
 				o->bp = fs;
 			if (ls == -1)

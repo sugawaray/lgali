@@ -249,11 +249,6 @@ dontreadtilcompt()
 	AEQ(0, obuf[0]);
 }
 
-static
-void
-readmultifrt()
-{
-}
 
 static
 void
@@ -275,6 +270,28 @@ dontreadnextt()
 	AEQ(0, obuf[0x80]);
 }
 
+static
+void
+readfromlast1stt()
+{
+	ssize_t sz;
+	unsigned char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[2].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x40, 0);
+	fi.rdsc[0].status &= ~Rdls;
+	initcompfr(&fi, 1, 0x40, 1);
+	fi.rdsc[0].status &= ~Rdls;
+	initcompfr(&fi, 2, 0x40, 2);
+	fi.rdsc[0].status &= ~Rdfs;
+	sz = read1(&fi.rx, -1, obuf, 0x100);
+	AEQ(0x80, sz);
+	AEQM(&fi.buf[1], obuf, 0x40);
+	AEQM(&fi.buf[2], &obuf[0x40], 0x40);
+}
+
 int
 main()
 {
@@ -289,6 +306,6 @@ main()
 	testrun("reading makes the buf be owned by the dev", readmkrdownt);
 	testrun("don't read til frames complete", dontreadtilcompt);
 	testrun("don't read the next til it completes", dontreadnextt);
-	testrun("read multi frames", readmultifrt);
+	testrun("read from the last 1st of the frame", readfromlast1stt);
 	return 0;
 }
