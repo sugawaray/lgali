@@ -14,7 +14,7 @@ do {	\
 #define AEQ(e, x)	\
 do {	\
 	if ((e) != (x)) {	\
-		testerror(testmsg("0x%08x != 0x%08x", (e), (x)));	\
+		testerror(testmsg("%s != %s : 0x%08x != 0x%08x", S((e)), S((x)), (e), (x)));	\
 	}	\
 } while (0)	\
 /**/
@@ -29,8 +29,8 @@ do {	\
 
 struct Fi {
 	struct Rx rx;
-	struct Rdesc rdsc[2];
-	unsigned char buf[2][0x800];
+	struct Rdesc rdsc[3];
+	unsigned char buf[3][0x800];
 };
 
 static
@@ -42,7 +42,7 @@ initfi(struct Fi *o)
 	for (i = 0; i < sizeof o->rdsc / sizeof o->rdsc[0]; ++i)
 		rdescinit(&o->rdsc[i], o->buf[i], sizeof o->buf[i], 0, 0);
 	o->rx.bp = 0;
-	o->rx.end = 0;
+	o->rx.fs = -1;
 	o->rx.pos = 0;
 	o->rx.rd = o->rdsc;
 }
@@ -229,6 +229,52 @@ readmkrdownt()
 	AEQ(1, obuf[1]);
 }
 
+static
+void
+dontreadtilcompt()
+{
+	ssize_t sz;
+	unsigned char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[1].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x80, 0);
+	fi.rdsc[0].status &= ~Rdls;
+	initcompfr(&fi, 1, 0x80, 1);
+	fi.rdsc[1].status &= ~(Rdfs | Rdls);
+	obuf[0] = 0;
+	sz = read1(&fi.rx, -1, obuf, 0x80);
+	AEQ(0, sz);
+	AEQ(0, obuf[0]);
+}
+
+static
+void
+readmultifrt()
+{
+}
+
+static
+void
+dontreadnextt()
+{
+	ssize_t sz;
+	unsigned char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[1].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x80, 0);
+	initcompfr(&fi, 1, 0x80, 1);
+	fi.rdsc[1].status &= ~Rdls;
+	obuf[0x80] = 0;
+	sz = read1(&fi.rx, -1, obuf, 0x100);
+	AEQ(0x80, sz);
+	AEQM(&fi.buf[0], obuf, 0x80);
+	AEQ(0, obuf[0x80]);
+}
+
 int
 main()
 {
@@ -241,5 +287,8 @@ main()
 	testrun("don't read the next buf if it's owned by the dev", read2endt);
 	testrun("read the cur buf(RER) and the next buf(1st)", readrer21stt);
 	testrun("reading makes the buf be owned by the dev", readmkrdownt);
+	testrun("don't read til frames complete", dontreadtilcompt);
+	testrun("don't read the next til it completes", dontreadnextt);
+	testrun("read multi frames", readmultifrt);
 	return 0;
 }

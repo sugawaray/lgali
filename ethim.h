@@ -47,8 +47,8 @@ void prrdbuf(const volatile struct Rdesc *o, int i);
 
 struct Rx {
 	int bp;
-	int end;
 	int pos;
+	int fs;
 	volatile struct Rdesc *rd;
 };
 ssize_t read1(struct Rx *o, int fildes, void *buf, size_t nbyte);

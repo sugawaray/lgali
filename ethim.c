@@ -468,9 +468,33 @@ ssize_t
 read1(struct Rx *o, int fd, void *buf, size_t nb)
 {
 	char *bs, *bd;
-	int i, d, fl;
+	int i, d, fl, fs, ls, t;
+	fs = ls = -1;
 	bd = buf;
 	while (nb > 0) {
+		if (ls == -1) {
+			fs = ls = -1;
+			i = o->bp;
+			do {
+				if (o->rd[i].status & RDOWN)
+					break;
+				if (o->rd[i].status & Rdfs)
+					fs = i;
+				if (o->rd[i].status & Rdls) {
+					ls = i;
+					break;
+				}
+				if (o->rd[i].des1l & Mrdscrer)
+					i = 0;
+				else
+					++i;
+			} while (o->bp != i);
+			/* bug */
+			if (fs != -1)
+				o->bp = fs;
+			if (ls == -1)
+				return bd - (char*)buf;
+		}
 		if (o->rd[o->bp].status & RDOWN)
 			break;
 		bs = (char*)o->rd[o->bp].b1addr + o->pos;
@@ -481,16 +505,18 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 		for (i = 0; i < d; ++i)
 			bd[i] = bs[i];
 		o->pos += d;
+		nb -= d;
+		bd += d;
 		if (o->pos >= fl) {
 			o->rd[o->bp].status |= RDOWN;
 			o->pos = 0;
+			if (o->bp == ls)
+				ls = -1;
 			if (o->rd[o->bp].des1l & Mrdscrer)
 				o->bp = 0;
 			else
 				++o->bp;
 		}
-		nb -= d;
-		bd += d;
 	}
 	return bd - (char*)buf;
 }
