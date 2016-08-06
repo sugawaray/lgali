@@ -200,12 +200,33 @@ readrer21stt()
 	initcompfr(&fi, 0, 0x80, 0);
 	initcompfr(&fi, 1, 0x80, 1);
 	read1(&fi.rx, -1, obuf, 0x80);
+	fi.rdsc[0].status &= ~RDOWN;
 	obuf[0x91] = 0x11;
 	sz = read1(&fi.rx, -1, obuf, 0x90);
 	AEQ(0x90, sz);
 	AEQM(&fi.buf[1], obuf, 0x80);
 	AEQM(&fi.buf[0], &obuf[0x80], 0x10);
 	A(memcmp(&fi.buf[0], &obuf[0x80], 0x11) != 0);
+}
+
+static
+void
+readmkrdownt()
+{
+	ssize_t sz;
+	unsigned char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[1].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x80, 0);
+	initcompfr(&fi, 1, 0x80, 1);
+	read1(&fi.rx, -1, obuf, 0xFF);
+	obuf[1] = 1;
+	sz = read1(&fi.rx, -1, obuf, 0x80);
+	AEQ(1, sz);
+	AEQ(0x80, obuf[0]);
+	AEQ(1, obuf[1]);
 }
 
 int
@@ -219,5 +240,6 @@ main()
 	testrun("read the buf & the part of the next buf", readcurnextt);
 	testrun("don't read the next buf if it's owned by the dev", read2endt);
 	testrun("read the cur buf(RER) and the next buf(1st)", readrer21stt);
+	testrun("reading makes the buf be owned by the dev", readmkrdownt);
 	return 0;
 }

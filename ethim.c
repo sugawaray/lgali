@@ -482,6 +482,7 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 			bd[i] = bs[i];
 		o->pos += d;
 		if (o->pos >= fl) {
+			o->rd[o->bp].status |= RDOWN;
 			o->pos = 0;
 			if (o->rd[o->bp].des1l & Mrdscrer)
 				o->bp = 0;
