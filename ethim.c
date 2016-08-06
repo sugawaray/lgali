@@ -483,7 +483,10 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 		o->pos += d;
 		if (o->pos >= fl) {
 			o->pos = 0;
-			++o->bp;
+			if (o->rd[o->bp].des1l & Mrdscrer)
+				o->bp = 0;
+			else
+				++o->bp;
 		}
 		nb -= d;
 		bd += d;

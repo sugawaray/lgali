@@ -187,6 +187,27 @@ read2endt()
 	A(memcmp(&fi.buf[0], obuf, 0x81) != 0);
 }
 
+static
+void
+readrer21stt()
+{
+	ssize_t sz;
+	unsigned char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[1].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x80, 0);
+	initcompfr(&fi, 1, 0x80, 1);
+	read1(&fi.rx, -1, obuf, 0x80);
+	obuf[0x91] = 0x11;
+	sz = read1(&fi.rx, -1, obuf, 0x90);
+	AEQ(0x90, sz);
+	AEQM(&fi.buf[1], obuf, 0x80);
+	AEQM(&fi.buf[0], &obuf[0x80], 0x10);
+	A(memcmp(&fi.buf[0], &obuf[0x80], 0x11) != 0);
+}
+
 int
 main()
 {
@@ -197,5 +218,6 @@ main()
 	testrun("read the following buf after the curr", readfolbuft);
 	testrun("read the buf & the part of the next buf", readcurnextt);
 	testrun("don't read the next buf if it's owned by the dev", read2endt);
+	testrun("read the cur buf(RER) and the next buf(1st)", readrer21stt);
 	return 0;
 }
