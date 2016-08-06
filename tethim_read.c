@@ -43,6 +43,7 @@ initfi(struct Fi *o)
 		rdescinit(&o->rdsc[i], o->buf[i], sizeof o->buf[i], 0, 0);
 	o->rx.bp = 0;
 	o->rx.fs = -1;
+	o->rx.ls = -1;
 	o->rx.pos = 0;
 	o->rx.rd = o->rdsc;
 }

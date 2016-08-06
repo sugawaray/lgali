@@ -49,6 +49,7 @@ struct Rx {
 	int bp;
 	int pos;
 	int fs;
+	int ls;
 	volatile struct Rdesc *rd;
 };
 ssize_t read1(struct Rx *o, int fildes, void *buf, size_t nbyte);
