@@ -466,6 +466,31 @@ rdflen(const volatile struct Rdesc *o)
 ssize_t
 read1(struct Rx *o, int fd, void *buf, size_t nb)
 {
+#if 1
+	char *bs, *bd;
+	int i, d, fl;
+	bd = buf;
+	while (nb > 0) {
+		if (o->rd[o->bp].status & RDOWN)
+			return 0;
+		bs = (char*)o->rd[o->bp].b1addr + o->pos;
+		d = fl = (o->rd[o->bp].status >> Ordfl) & ((unsigned)Mrdfl >> Ordfl);
+		d -= o->pos;
+		if (nb < d)
+			d = nb;
+		for (i = 0; i < d; ++i) {
+			bd[i] = bs[i];
+		}
+		o->pos += d;
+		if (o->pos >= fl) {
+			o->pos = 0;
+			++o->bp;
+		}
+		nb -= d;
+		bd += d;
+	}
+	return bd - (char*)buf;
+#else
 	char *bs, *bd;
 	int i, d, fl;
 	if (o->rd[o->bp].status & RDOWN)
@@ -485,4 +510,5 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 		++o->bp;
 	}
 	return d;
+#endif
 }

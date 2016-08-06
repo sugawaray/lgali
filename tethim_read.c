@@ -18,6 +18,14 @@ do {	\
 	}	\
 } while (0)	\
 /**/
+#define AEQM(e, x, sz)	\
+do {	\
+	if (memcmp((e), (x), (sz)) != 0) {	\
+		testerror(testmsg("memdiff\nexpect\n%sactual\n%s",	\
+			testmem((char*)(e), (sz)), testmem((char*)(x), (sz))));	\
+	}	\
+} while (0)	\
+/**/
 
 struct Fi {
 	struct Rx rx;
@@ -72,19 +80,13 @@ static
 void
 readabuft()
 {
-	int i;
 	ssize_t sz;
 	char obuf[0x100];
 	struct Fi fi;
 
 	initfi(&fi);
 	fi.rdsc[0].des1l |= Mrdscrer;
-	fi.rdsc[0].status &= ~RDOWN;
-	fi.rdsc[0].status |= Rdfs | Rdls;
-	fi.rdsc[0].status &= ~Mrdfl;
-	fi.rdsc[0].status |= (0x100 << Ordfl) & Mrdfl;
-	for (i = 0; i < sizeof fi.buf[0]; ++i)
-		fi.buf[0][i] = i;
+	initcompfr(&fi, 0, 0x100, 0);
 	sz = read1(&fi.rx, -1, obuf, sizeof obuf);
 	AEQ(0x100, sz);
 	AEQ(0, memcmp(obuf, fi.buf[0], sizeof obuf));
@@ -145,6 +147,26 @@ readfolbuft()
 	A(memcmp(&fi.buf[1], obuf, 0x101) == 0);
 }
 
+static
+void
+readcurnextt()
+{
+	ssize_t sz;
+	unsigned char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[1].status |= Mrdscrer;
+	initcompfr(&fi, 0, 0x80, 0);
+	initcompfr(&fi, 1, 0x80, 1);
+	obuf[0x100] = 0x82;
+	sz = read1(&fi.rx, -1, obuf, 0x100);
+	AEQ(0x100, sz);
+	AEQM(&fi.buf[0], obuf, 0x80);
+	AEQM(&fi.buf[1], &obuf[0x80], 0x80);
+	A(memcmp(&fi.buf[1], &obuf[0x80], 0x81) != 0);
+}
+
 int
 main()
 {
@@ -153,5 +175,6 @@ main()
 	testrun("read a buf by size", readabbyszt);
 	testrun("a reading advances the position pointer", readadvptrt);
 	testrun("read the following buf after the curr", readfolbuft);
+	testrun("read the buf & the part of the next buf", readcurnextt);
 	return 0;
 }
