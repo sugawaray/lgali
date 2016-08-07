@@ -53,6 +53,7 @@ struct Rx {
 	volatile struct Rdesc *rd;
 };
 ssize_t read1(struct Rx *o, int fildes, void *buf, size_t nbyte);
+int enrx(struct Rx *o);
 
 enum {
 	Msarc	= 0x70000000,

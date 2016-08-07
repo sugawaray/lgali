@@ -479,7 +479,7 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 					break;
 				if (o->rd[i].status & Rdfs)
 					o->fs = i;
-				if (o->rd[i].status & Rdls) {
+				if (o->fs != -1 && (o->rd[i].status & Rdls)) {
 					o->ls = i;
 					break;
 				}
@@ -517,4 +517,31 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 		}
 	}
 	return bd - (char*)buf;
+}
+
+int
+enrx(struct Rx *o)
+{
+	int rer;
+	if (o->bp < 0)
+		return -1;
+	if (o->ls == -1) {
+		rer = o->rd[o->bp].des1l & Mrdscrer;
+		o->rd[o->bp].status |= RDOWN;
+	} else {
+		do {
+			rer = o->rd[o->bp].des1l & Mrdscrer;
+			o->rd[o->bp].status |= RDOWN;
+			if (rer)
+				o->bp = 0;
+			else
+				++o->bp;
+			o->rd[o->bp].status |= RDOWN;
+		} while (o->bp != o->ls);
+	}
+	if (rer)
+		o->bp = 0;
+	else
+		++o->bp;
+	return 0;
 }

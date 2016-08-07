@@ -29,8 +29,8 @@ do {	\
 
 struct Fi {
 	struct Rx rx;
-	struct Rdesc rdsc[3];
-	unsigned char buf[3][0x800];
+	struct Rdesc rdsc[4];
+	unsigned char buf[4][0x800];
 };
 
 static
@@ -293,6 +293,96 @@ readfromlast1stt()
 	AEQM(&fi.buf[2], &obuf[0x40], 0x40);
 }
 
+static
+void
+enrxadvbpt()
+{
+	ssize_t sz;
+	unsigned char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[2].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x40, 0);
+	fi.rdsc[0].status &= ~Rdls;
+	initcompfr(&fi, 1, 0x40, 1);
+	fi.rdsc[1].status &= ~Rdfs;
+	initcompfr(&fi, 2, 0x40, 2);
+	fi.rdsc[2].status &= ~Rdls;
+	fi.rx.bp = 0;
+	fi.rx.ls = -1;
+	enrx(&fi.rx);
+	A(fi.rdsc[0].status & RDOWN);
+	fi.rdsc[0].status &= ~RDOWN;
+	fi.rdsc[0].status &= ~Rdfs;
+	fi.rdsc[0].status |= Rdls;
+	sz = read1(&fi.rx, -1, obuf, 0x80);
+	AEQ(0x80, sz);
+	AEQM(&fi.buf[2], obuf, 0x40);
+	AEQM(&fi.buf[0], &obuf[0x40], 0x40);
+}
+
+static
+void
+enrxadvaftlstt()
+{
+	ssize_t sz;
+	unsigned char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[2].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x40, 0);
+	fi.rdsc[0].status &= ~Rdls;
+	initcompfr(&fi, 1, 0x40, 1);
+	fi.rdsc[1].status &= ~Rdfs;
+	initcompfr(&fi, 2, 0x40, 2);
+	fi.rx.bp = 0;
+	fi.rx.ls = 1;
+	enrx(&fi.rx);
+	sz = read1(&fi.rx, -1, obuf, 0x80);
+	AEQ(0x40, sz);
+	AEQM(&fi.buf[2], obuf, 0x40);
+}
+
+static
+void
+enrxgivebufst()
+{
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[3].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x40, 0);
+	fi.rdsc[0].status &= ~Rdls;
+	initcompfr(&fi, 1, 0x40, 1);
+	fi.rdsc[1].status &= ~Rdls;
+	initcompfr(&fi, 2, 0x40, 2);
+	fi.rdsc[2].status &= ~Rdls;
+	initcompfr(&fi, 3, 0x40, 3);
+	fi.rdsc[3].status &= ~Rdfs;
+	fi.rx.bp = 0;
+	fi.rx.ls = 3;
+	enrx(&fi.rx);
+	A(fi.rdsc[0].status & RDOWN);
+	A(fi.rdsc[1].status & RDOWN);
+	A(fi.rdsc[2].status & RDOWN);
+	A(fi.rdsc[3].status & RDOWN);
+}
+
+static
+void
+enrxreterrt()
+{
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[0].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x40, 0);
+	fi.rx.bp = -1;
+	AEQ(-1, enrx(&fi.rx));
+}
+
 int
 main()
 {
@@ -308,5 +398,10 @@ main()
 	testrun("don't read til frames complete", dontreadtilcompt);
 	testrun("don't read the next til it completes", dontreadnextt);
 	testrun("read from the last 1st of the frame", readfromlast1stt);
+
+	testrun("enrx advances the bp when full", enrxadvbpt);
+	testrun("enrx advances the bp after the ls", enrxadvaftlstt);
+	testrun("enrx give bufs to the dev", enrxgivebufst);
+	testrun("enrx returns an err in unexpected condition", enrxreterrt);
 	return 0;
 }
