@@ -463,6 +463,31 @@ rdflen(const volatile struct Rdesc *o)
 		return -1;
 }
 
+static
+void
+rx2nxt(struct Rx *o)
+{
+	int i;
+	o->fs = -1;
+	i = o->bp;
+	do {
+		if (o->rd[i].status & RDOWN)
+			break;
+		if (o->rd[i].status & Rdfs)
+			o->fs = i;
+		if (o->fs != -1 && (o->rd[i].status & Rdls)) {
+			o->ls = i;
+			break;
+		}
+		if (o->rd[i].des1l & Mrdscrer)
+			i = 0;
+		else
+			++i;
+	} while (o->bp != i);
+	if (o->fs != -1)
+		o->bp = o->fs;
+}
+
 #define XMSKVAL(v, m, o)	(((v) >> (o)) & ((unsigned)(m) >> (o)))
 ssize_t
 read1(struct Rx *o, int fd, void *buf, size_t nb)
@@ -472,24 +497,7 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 	bd = buf;
 	while (nb > 0) {
 		if (o->ls == -1) {
-			o->fs = -1;
-			i = o->bp;
-			do {
-				if (o->rd[i].status & RDOWN)
-					break;
-				if (o->rd[i].status & Rdfs)
-					o->fs = i;
-				if (o->fs != -1 && (o->rd[i].status & Rdls)) {
-					o->ls = i;
-					break;
-				}
-				if (o->rd[i].des1l & Mrdscrer)
-					i = 0;
-				else
-					++i;
-			} while (o->bp != i);
-			if (o->fs != -1)
-				o->bp = o->fs;
+			rx2nxt(o);
 			if (o->ls == -1)
 				return bd - (char*)buf;
 		}
