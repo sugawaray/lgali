@@ -4,6 +4,8 @@ u32 ethdefmcnf(u32 orig);
 u32 ethdefmff(u32 orig);
 
 enum {
+	Stru	= 0x00000080,
+	Stgmi	= 0x08000000,
 	Msr	= 0x00000002,
 	Mst	= 0x00002000,
 
@@ -20,10 +22,12 @@ struct Rdesc {
 	u16	des1h;
 	u32	b1addr;
 	u32	b2addr;
+#if 0
 	u32	exstat;
 	u32	_rsv1;
 	u32	timel;
 	u32	timeh;
+#endif
 };
 
 struct Tdesc {
@@ -82,3 +86,5 @@ enum {
 	Mtdscb2sz	= 0x1FFF,
 	Mtdscb1sz	= 0x1FFF
 };
+
+void setcurrdsc(volatile u32 *p);

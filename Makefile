@@ -14,6 +14,12 @@ all: $(TARGETS) $(TESTTGTS)
 clean:
 	-rm $(TARGETS) $(TGTOBJS) $(OBJS) $(HOBJS) $(TESTTGTS) $(TESTENTS) $(TOBJS)
 
+calltest:
+	./tintr
+	./tmii
+	./tethim
+	./tethim_read
+
 $(TARGETS): $(TGTOBJS) $(OBJS) $(HOBJS)
 	$(LD) -o $@ ${@}.o $(OBJS) $(HOBJS) $(LDFLAGS)
 

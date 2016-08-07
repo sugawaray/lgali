@@ -20,6 +20,7 @@ enum {
 	Ranlpa	=	0x05,
 	Rphysts	=	0x10,
 	Rmicr	=	0x11,
+	Rmisr	=	0x12,
 	Rrbr	=	0x17,
 	Mcreset	=	0x00008000,
 	Mcanen	=	0x00001000,

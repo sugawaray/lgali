@@ -31,6 +31,7 @@ struct Fi {
 	struct Rx rx;
 	struct Rdesc rdsc[4];
 	unsigned char buf[4][0x800];
+	volatile u32 rcurrdsc;
 };
 
 static
@@ -46,6 +47,8 @@ initfi(struct Fi *o)
 	o->rx.ls = -1;
 	o->rx.pos = 0;
 	o->rx.rd = o->rdsc;
+	setcurrdsc(&o->rcurrdsc);
+	o->rcurrdsc = (u32)o->rdsc;
 }
 
 static
@@ -372,6 +375,32 @@ enrxgivebufst()
 
 static
 void
+enrxgivecurrdt()
+{
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[3].des1l |= Mrdscrer;
+	fi.rcurrdsc = (u32)fi.rdsc;
+	initcompfr(&fi, 0, 0x40, 0);
+	fi.rdsc[0].status &= ~Rdls;
+	initcompfr(&fi, 1, 0x40, 1);
+	fi.rdsc[1].status &= ~Rdls;
+	initcompfr(&fi, 2, 0x40, 2);
+	fi.rdsc[2].status &= ~Rdls;
+	initcompfr(&fi, 3, 0x40, 3);
+	fi.rdsc[3].status &= ~Rdfs;
+	fi.rx.bp = 1;
+	fi.rx.ls = 3;
+	enrx(&fi.rx);
+	A(fi.rdsc[0].status & RDOWN);
+	A(fi.rdsc[1].status & RDOWN);
+	A(fi.rdsc[2].status & RDOWN);
+	A(fi.rdsc[3].status & RDOWN);
+}
+
+static
+void
 enrxreterrt()
 {
 	struct Fi fi;
@@ -381,6 +410,25 @@ enrxreterrt()
 	initcompfr(&fi, 0, 0x40, 0);
 	fi.rx.bp = -1;
 	AEQ(-1, enrx(&fi.rx));
+}
+
+static
+void
+readcurmcallt()
+{
+	ssize_t sz;
+	unsigned char obuf[0x100];
+	struct Fi fi;
+
+	initfi(&fi);
+	fi.rdsc[1].des1l |= Mrdscrer;
+	initcompfr(&fi, 0, 0x80, 0);
+	initcompfr(&fi, 1, 0x80, 1);
+	read1(&fi.rx, -1, obuf, 0x60);
+	sz = read1(&fi.rx, -1, &obuf[0x60], 0x60);
+	AEQ(0x60, sz);
+	AEQM(&fi.buf[0], obuf, 0x80);
+	AEQM(&fi.buf[1], &obuf[0x80], 0x40);
 }
 
 int
@@ -398,10 +446,12 @@ main()
 	testrun("don't read til frames complete", dontreadtilcompt);
 	testrun("don't read the next til it completes", dontreadnextt);
 	testrun("read from the last 1st of the frame", readfromlast1stt);
+	testrun("read the cur with multi calls", readcurmcallt);
 
 	testrun("enrx advances the bp when full", enrxadvbpt);
 	testrun("enrx advances the bp after the ls", enrxadvaftlstt);
 	testrun("enrx give bufs to the dev", enrxgivebufst);
+	testrun("enrx give bufs from rcurrbuf", enrxgivecurrdt);
 	testrun("enrx returns an err in unexpected condition", enrxreterrt);
 	return 0;
 }

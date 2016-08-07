@@ -19,6 +19,9 @@ enum {
 	Mmacintr	= 0x0038,
 	Mmmacad0h	= 0x0040,
 	Mmmacad0l	= 0x0044,
+	Mmmcintrrx	= 0x0104,
+	Mmmcimskrx	= 0x010C,
+	Mmrcvpoll	= 0x1008,
 	Mmrdsclad	= 0x100C,
 	Mmtdsclad	= 0x1010,
 	Mmstatus	= 0x1014,
@@ -31,6 +34,27 @@ enum {
 
 static u32 base0;
 #define MR(a)	(*(volatile u32 *)(base0 + (a)))
+static struct Rx rx;
+static volatile u32 *rcurrdsc;
+
+void
+setcurrdsc(volatile u32 *p)
+{
+	rcurrdsc = p;
+}
+
+static
+void
+dbgrx(struct Rx *o)
+{
+	u32 t;
+	u32 v;
+	seroutf("RX bp] 0x%X\r\n", o->bp);
+	t = (*rcurrdsc - (u32)o->rd) / sizeof o->rd[0];
+	seroutf("rcur] 0x%X\r\n", t);
+	v = o->rd[t].status & RDOWN;
+	seroutf("rcur RDOWN] 0x%X\r\n", v);
+}
 
 u32
 ethdefmcnf(u32 orig)
@@ -91,22 +115,6 @@ tdescinit(struct Tdesc *o, void *b1, int b1sz, void *b2, int b2sz)
 
 #define REOI	0xFEE000B0
 #define R2(a)	(*(volatile u32 *)(a))
-void
-oneth1()
-{
-	ledmemit(2, 1);
-	pcicw32(POFFVECPEND, 0);
-	R2(REOI) = 1;
-	MR(Mmstatus) |= 0x1FFFF;
-}
-
-#define IDDEV	20
-#define IDFUN	6
-
-#define VEC	0x41
-#define SVEC	0x40
-
-static struct Idtrec idt[0x100];
 
 enum {
 	Rdsclbase	= 0x100000,
@@ -125,6 +133,29 @@ enum {
 	Phyaddr	=	0x02
 };
 
+void
+oneth1()
+{
+	ledmemit(2, 1);
+	if (MR(Mmstatus) & Stru) {
+		MR(Mmopmod) &= ~Msr;
+		enrx(&rx);
+		MR(Mmrcvpoll) = 1;
+		MR(Mmopmod) |= Msr;
+	}
+	pcicw32(POFFVECPEND, 0);
+	R2(REOI) = 1;
+	MR(Mmstatus) |= 0x1FFFF;
+}
+
+#define IDDEV	20
+#define IDFUN	6
+
+#define VEC	0x41
+#define SVEC	0x40
+
+static struct Idtrec idt[0x100];
+
 static volatile struct Rdesc *rdesc = Rdsclbase;
 static volatile struct Tdesc *tdesc = Tdsclbase;
 
@@ -139,7 +170,6 @@ static volatile struct Tdesc *tdesc = Tdsclbase;
 #define MSGDATA	(0x0000 | VEC)
 
 #define LR(a)	(*(volatile u32 *)(a))
-
 
 enum {
 	Busmasen	=	0x0004,
@@ -174,6 +204,7 @@ void
 enintr()
 {
 	MR(Mmintren) |= Rcvintren;
+	MR(Mmmcimskrx) = 0xFFFFFFFF;
 	seroutf("Spurious Interrupt Vector Register(0x%X)\r\n", LR(RSIV));
 	LR(RSIV) |= APICEN | SVEC;
 	act();
@@ -219,6 +250,7 @@ static
 void
 initmmr()
 {
+	rcurrdsc = (volatile u32 *)(base0 + Mmcurrdsc);
 	MR(Mmmacad0h) = AE | MACADDRH;
 	MR(Mmmacad0l) = MACADDRL;
 	MR(Mmmacconf) = ethdefmcnf(MR(Mmmacconf));
@@ -286,8 +318,6 @@ initintr()
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
 }
-
-static struct Rx rx;
 
 static
 void
@@ -414,10 +444,21 @@ ethdbg()
 {
 #if 1
 	ssize_t sz;
+	u32 t1, t2;
+	long i;
 	unsigned char b[0x40];
+
+	t1 = MR(Mmacintr);
+	t2 = MR(Mmstatus);
+	seroutf("MACINTR, S] 0x%X, 0x%X\r\n", t1, t2);
+
 	sz = read(-1, b, sizeof b);
 	if (sz > 0)
 		prdat(b, sz);
+	{
+		for (i = 0; i < 5000000; ++i)
+			nop();
+	}
 #else
 	seroutf("eflags]0x%X\r\n", eflags());
 	seroutf("CMD]0x%X\r\n", rp16(POFFCMD));
@@ -447,8 +488,8 @@ ethdbg()
 	seroutf("ESR]0x%X\r\n", *(u32*)RESR);
 	seroutf("Interrupt Register]0x%X\r\n", MR(Mmacintr));
 	prrxbufs();
-#endif
 	wait();
+#endif
 }
 
 int
@@ -539,23 +580,31 @@ read1(struct Rx *o, int fd, void *buf, size_t nb)
 int
 enrx(struct Rx *o)
 {
-	int rer;
+	int i, rer;
 	if (o->bp < 0)
 		return -1;
-	if (o->ls == -1) {
-		rer = o->rd[o->bp].des1l & Mrdscrer;
-		o->rd[o->bp].status |= RDOWN;
-	} else {
-		do {
+	i = (*rcurrdsc - (u32)o->rd) / sizeof o->rd[0];
+	while (i != o->bp) {
+		rer = o->rd[i].des1l & Mrdscrer;
+		o->rd[i].status |= RDOWN;
+		if (rer)
+			i = 0;
+		else
+			++i;
+	}
+	if (o->ls != -1) {
+		while (o->bp != o->ls) {
 			rer = o->rd[o->bp].des1l & Mrdscrer;
 			o->rd[o->bp].status |= RDOWN;
 			if (rer)
 				o->bp = 0;
 			else
 				++o->bp;
-			o->rd[o->bp].status |= RDOWN;
-		} while (o->bp != o->ls);
+		}
+		o->fs = o->ls = -1;
 	}
+	rer = o->rd[o->bp].des1l & Mrdscrer;
+	o->rd[o->bp].status |= RDOWN;
 	if (rer)
 		o->bp = 0;
 	else
