@@ -7,6 +7,7 @@
 #include <lib.h>
 #include <mii.h>
 #include <ser.h>
+#include <unistd.h>
 
 enum {
 	Mmmacconf	= 0x0000,
@@ -286,6 +287,19 @@ initintr()
 	lidt(tp);
 }
 
+static struct Rx rx;
+
+static
+void
+initrx(struct Rx *o)
+{
+	o->bp = 0;
+	o->fs = -1;
+	o->ls = -1;
+	o->pos = 0;
+	o->rd = rdesc;
+}
+
 #define RDSC(list, i)	((volatile struct Rdesc *)((u32)(list) + (Rdsz * (i))))
 static
 void
@@ -301,6 +315,7 @@ initdma()
 		rdescinit(RDSC(rdesc, i), (void *)a1, Rbuf1sz, (void *)a2, Rbuf2sz);
 	}
 	RDSC(rdesc, Rxblen - 1)->des1l |= Mrdscrer;
+	initrx(&rx);
 	for (i = 0; i < Rxblen; ++i)
 		RDSC(rdesc, i)->status = RDSC(rdesc, i)->status | RDOWN;
 	mmemset((void *)Tbuf1ad, 0, Tbuf1sz);
@@ -377,10 +392,33 @@ prrxbufs()
 		prrdbuf(RDSC(rdesc, i), i);
 }
 
+static
+void
+prdat(const unsigned char *b, int sz)
+{
+	static int pos = 0;
+	int i;
+
+	for (i = 0; i < sz; ++i) {
+		if (((pos + i) % 16) == 0)
+			seroutf("\r\n%X ", pos + i);
+		seroutf("%X ", b[i]);
+	}
+	if (sz >= 0)
+		pos += sz;
+}
+
 
 void
 ethdbg()
 {
+#if 1
+	ssize_t sz;
+	unsigned char b[0x40];
+	sz = read(-1, b, sizeof b);
+	if (sz > 0)
+		prdat(b, sz);
+#else
 	seroutf("eflags]0x%X\r\n", eflags());
 	seroutf("CMD]0x%X\r\n", rp16(POFFCMD));
 	seroutf("STATUS]0x%X\r\n", rp16(POFFSTATUS));
@@ -409,6 +447,7 @@ ethdbg()
 	seroutf("ESR]0x%X\r\n", *(u32*)RESR);
 	seroutf("Interrupt Register]0x%X\r\n", MR(Mmacintr));
 	prrxbufs();
+#endif
 	wait();
 }
 
@@ -522,4 +561,10 @@ enrx(struct Rx *o)
 	else
 		++o->bp;
 	return 0;
+}
+
+ssize_t
+read(int fd, void *buf, size_t nb)
+{
+	return read1(&rx, -1, buf, nb);
 }
