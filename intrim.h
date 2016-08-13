@@ -3,3 +3,4 @@ void ontrap();
 void ontimer();
 void ontimer2();
 void oneth();
+void intrdef();

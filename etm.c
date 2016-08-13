@@ -26,10 +26,7 @@ initintr()
 
 	cli();
 	ic8259_init(Irqstimer);
-	/* initialize i8259 */
-	/*
-	ic8259setmsk(mmsk, smsk);
-	*/
+	ic8259_setmsk(0xFE, 0xFF);
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
 	sti();

@@ -9,6 +9,7 @@
 .globl	lidt
 .globl	sidt
 .globl	ic8259_init
+.globl	ic8259_setmsk
 .globl	cpuid
 .globl	eflags
 .globl	ontimer
@@ -17,6 +18,7 @@
 .globl	sti
 .globl	cli
 .globl	oneth
+.globl	intrdef
 .text
 sti:
 	sti
@@ -48,15 +50,22 @@ ic8259_init:
 	movb	$0x1,	%al
 	outb	%al,	$0x21
 	outb	%al,	$0xA1
-	movl	-4(%ebp),	%eax
-	movl	$0x1,	%ecx
-	not	%ecx
-	and	%ecx,	%eax
-	outb	%al,	$0x21
-	movl	-8(%ebp),	%eax
-	outb	%al,	$0xA1
+	pushl	$0xff
+	pushl	$0xff
+	call	ic8259_setmsk
 	popl	%eax
 	popl	%eax
+	popl	%eax
+	popl	%eax
+	popl	%ebp
+	ret
+ic8259_setmsk:
+	pushl	%ebp
+	mov	%esp,	%ebp
+	mov	8(%ebp),	%al
+	out	%al,	$0x21
+	mov	12(%ebp),	%al
+	out	%al,	$0xA1
 	popl	%ebp
 	ret
 ontrap:
@@ -196,3 +205,5 @@ eflags:
 	pushf
 	pop	%eax
 	ret
+intrdef:
+	iret

@@ -29,6 +29,7 @@ void sgdt(char *d);
 void lidt(const char *src);
 void sidt(char *d);
 void ic8259_init(int off);
+void ic8259_setmsk(u8 master, u8 sub);
 void cli();
 void sti();
 u32 cpuid();
