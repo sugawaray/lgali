@@ -8,8 +8,8 @@
 .globl	sgdt
 .globl	lidt
 .globl	sidt
-.globl	ic8259_init
-.globl	ic8259_setmsk
+.globl	ic8259init
+.globl	ic8259setmsk
 .globl	cpuid
 .globl	eflags
 .globl	ontimer
@@ -26,7 +26,7 @@ sti:
 cli:
 	cli
 	ret
-ic8259_init:
+ic8259init:
 	pushl	%ebp
 	movl	%esp,	%ebp
 	xor	%eax,	%eax
@@ -52,14 +52,14 @@ ic8259_init:
 	outb	%al,	$0xA1
 	pushl	$0xff
 	pushl	$0xff
-	call	ic8259_setmsk
+	call	ic8259setmsk
 	popl	%eax
 	popl	%eax
 	popl	%eax
 	popl	%eax
 	popl	%ebp
 	ret
-ic8259_setmsk:
+ic8259setmsk:
 	pushl	%ebp
 	mov	%esp,	%ebp
 	mov	8(%ebp),	%al

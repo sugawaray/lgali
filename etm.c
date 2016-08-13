@@ -25,8 +25,8 @@ initintr()
 	idtrsetad(rec, ontimer);
 
 	cli();
-	ic8259_init(Irqstimer);
-	ic8259_setmsk(0xFE, 0xFF);
+	ic8259init(Irqstimer);
+	ic8259setmsk(0xFE, 0xFF);
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
 	sti();
