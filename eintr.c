@@ -62,6 +62,7 @@ intrinit()
 	mmemset(b, 0, sizeof b);
 	sidt(b);
 	mmemcpy(idt, *(u32 *)(b + 2), *(u16 *)b + 1);
+	cli();
 	ic8259_init(0x20);
 	for (i = 0; i < 0x100; ++i) {
 #if 1

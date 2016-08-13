@@ -27,7 +27,6 @@ cli:
 ic8259_init:
 	pushl	%ebp
 	movl	%esp,	%ebp
-	cli
 	xor	%eax,	%eax
 	inb	$0x21,	%al
 	pushl	%eax
