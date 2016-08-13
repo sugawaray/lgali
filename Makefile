@@ -39,7 +39,7 @@ tmii.to: tmii.c miiim.h
 ioapic.o: ioapic.c include/ioapic.h
 ethim.o: ethim.c ethim.h include/eth.h
 ethim.to: ethim.c ethim.h include/eth.h
-etm.o: etm.c
+etm.o: etm.c intrim.h include/intr.h include/led.h include/quark.h include/ser.h
 eeth.o: eeth.c ethim.h include/eth.h
 hstbr.o: hstbr.c include/quark.h include/hstbr.h
 serout.o: serout.c include/ser.h serim.h
