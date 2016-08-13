@@ -64,3 +64,11 @@ idtrsetssel(struct Idtrec *o, u8 v)
 	o->ssel = v << 0x3;
 }
 
+void
+idtrsetvalid(struct Idtrec *o, int isvalid)
+{
+	if (isvalid)
+		o->attr |= 0x8000;
+	else
+		o->attr &= 0x7FFF;
+}

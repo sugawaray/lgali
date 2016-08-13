@@ -13,3 +13,4 @@ struct Idtrec {
 void idtrsetad(struct Idtrec *o, void (*f)());
 void idtrsettype(struct Idtrec *o, u8 t);
 void idtrsetssel(struct Idtrec *o, u8 v);
+void idtrsetvalid(struct Idtrec *o, int isvalid);
