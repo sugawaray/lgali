@@ -5,7 +5,7 @@ TGTOBJS = eintr.o eled.o emc.o eser.o eeth.o eioapic.o etm.o
 TESTENTS = tintr.to tethim.to tmii.to tethim_read.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
-OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o hstbr.o
+OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o hstbr.o pit8254.o tmim.o tmimc.o
 HOBJS = serout.o
 TOBJS = serstub.to $(OBJS:.o=.to)
 
@@ -45,3 +45,6 @@ hstbr.o: hstbr.c include/quark.h include/hstbr.h
 serout.o: serout.c include/ser.h serim.h
 serstub.to: serstub.c
 tethim_read.to: tethim_read.c ethim.h include/quark.h
+pit8254.o: pit8254.s include/pit8254.h
+tmim.o: tmim.s tmim.h
+tmimc.o: tmimc.c tmim.h

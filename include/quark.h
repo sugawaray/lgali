@@ -30,6 +30,7 @@ void lidt(const char *src);
 void sidt(char *d);
 void ic8259init(int off);
 void ic8259setmsk(u8 master, u8 sub);
+void ic8259eoi();
 void cli();
 void sti();
 u32 cpuid();

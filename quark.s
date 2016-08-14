@@ -10,6 +10,7 @@
 .globl	sidt
 .globl	ic8259init
 .globl	ic8259setmsk
+.globl	ic8259eoi
 .globl	cpuid
 .globl	eflags
 .globl	ontimer
@@ -67,6 +68,11 @@ ic8259setmsk:
 	mov	12(%ebp),	%al
 	out	%al,	$0xA1
 	popl	%ebp
+	ret
+ic8259eoi:
+	mov	$0x20,	%al
+	mov	$0x20,	%dx
+	out	%al,	%dx
 	ret
 ontrap:
 	pusha

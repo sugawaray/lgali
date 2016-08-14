@@ -1,11 +1,15 @@
 #include "intrim.h"
+#include "tmim.h"
 #include <intr.h>
 #include <led.h>
 #include <quark.h>
+#include <pit8254.h>
 #include <ser.h>
 
 enum {
-	Irqstimer	= 0x20
+	Irqstimer	= 0x20,
+
+	HZ	= 100
 };
 
 static struct Idtrec idt[0x100];
@@ -22,7 +26,7 @@ initintr()
 	rec = &idt[Irqstimer];
 	idtrsetssel(rec, 0x02);
 	idtrsettype(rec, IDTRINTR);
-	idtrsetad(rec, ontimer);
+	idtrsetad(rec, tickirqf);
 
 	cli();
 	ic8259init(Irqstimer);
@@ -30,15 +34,6 @@ initintr()
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
 	sti();
-}
-
-static
-void
-timerinit()
-{
-	outb(0x43, 0x36);
-	outb(0x40, 0xFF);
-	outb(0x40, 0xFF);
 }
 
 int
@@ -53,8 +48,7 @@ main()
 		ledmemit(5, 100);
 	else {
 		initintr();
-		timerinit();
-		/* initialize i8254 */
+		stimerstart(HZ);
 		/* initialize LAPIC timer */
 		/* stop i8254 system timer */
 	}
