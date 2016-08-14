@@ -1,10 +1,10 @@
 #include "intrim.h"
-#include "tmim.h"
 #include <intr.h>
 #include <led.h>
 #include <quark.h>
 #include <pit8254.h>
 #include <ser.h>
+#include <tick.h>
 
 enum {
 	Irqstimer	= 0x20,
@@ -39,7 +39,8 @@ initintr()
 int
 main()
 {
-	int r;
+	int r, q;
+	u32 t;
 
 	wait();
 	ledminit();
@@ -52,7 +53,13 @@ main()
 		/* initialize LAPIC timer */
 		/* stop i8254 system timer */
 	}
-	for (;;)
-		;
+	q = 0;
+	for (;;) {
+		t = ticks;
+		if ((q != t / 100) && (t % 100 == 0)) {
+			q = t / 100;
+			ledmemit(1, 1);
+		}
+	}
 	return 0;
 }

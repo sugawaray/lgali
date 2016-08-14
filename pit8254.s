@@ -1,11 +1,19 @@
 	.text
-	TCW	= 0x43
-	C0TS	= 0x40
-	RWSLM	= 0x30
-	CMSQU	= 0x06
 	.globl	stimerstart
-	.local FREQ
+	.local TCW, C0TS, RWSLM, CMSQU, FREQ
+	.type	TCW,	STT_OBJECT
+	.type	C0TS,	STT_OBJECT
+	.type	RWSLM,	STT_OBJECT
+	.type	CMSQU,	STT_OBJECT
 	.type	FREQ,	STT_OBJECT
+TCW:
+	.int	0x43
+C0TS:
+	.int	0x40
+RWSLM:
+	.int	0x30
+CMSQU:
+	.int	0x06
 FREQ:
 	.long	1193182
 stimerstart:

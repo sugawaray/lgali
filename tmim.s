@@ -1,8 +1,13 @@
-	.globl	tickirqf
+	.data
+	.globl	ticks
+ticks:
+	.long	0
+
 	.text
+	.globl	tickirqf
 tickirqf:
 	pusha
-	call	ontick
+	incl	ticks
 	call	ic8259eoi
 	popa
 	iret
