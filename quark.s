@@ -19,7 +19,6 @@
 .globl	sti
 .globl	cli
 .globl	oneth
-.globl	intrdef
 .text
 sti:
 	sti
@@ -211,5 +210,3 @@ eflags:
 	pushf
 	pop	%eax
 	ret
-intrdef:
-	iret
