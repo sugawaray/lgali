@@ -1,4 +1,4 @@
-#include <quark.h>
+#include <types.h>
 
 struct Idtrec {
 	u16	offl;

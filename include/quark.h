@@ -1,20 +1,13 @@
 #ifndef QUARK_H
 #define QUARK_H	1
 
+#include <types.h>
+
 #define PCIC_ADDR_PORT	0xCF8
 #define PCIC_DATA_PORT	0xCFC
 
 #define PCICADDR(b, d, f, o)	\
 	(0x80000000 | ((b) << 16) | ((d) << 11) | ((f) << 8) | ((o) & 0xFC))
-
-typedef unsigned char	u8;
-typedef unsigned short	u16;
-typedef int	i32;
-typedef unsigned	u32;
-
-typedef i32 off_t;
-typedef i32 ssize_t;
-typedef u32 size_t;
 
 void outb(u16 port, u8 value);
 void outw(u16 port, u16 value);

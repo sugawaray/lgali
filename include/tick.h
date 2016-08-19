@@ -1,4 +1,4 @@
-#include <quark.h>
+#include <types.h>
 
 extern volatile u32 ticks;
 

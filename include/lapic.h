@@ -1,4 +1,4 @@
-#include <quark.h>
+#include <types.h>
 
 void lapicinit(u8 spurvec);
 

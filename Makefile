@@ -49,3 +49,9 @@ pit8254.o: pit8254.s include/pit8254.h
 tmim.o: tmim.s include/tick.h
 lapic.o: lapic.c include/lapic.h
 lapic1.o: lapic1.s
+include/intr.h: include/types.h
+include/lapic.h: include/types.h
+include/mii.h: include/types.h
+include/quark.h: include/types.h
+include/tick.h: include/types.h
+include/unistd.h: include/types.h
