@@ -1,7 +1,7 @@
 .POSIX:
 .SUFFIXES: .o .to .s
 
-TGTOBJS = emc.o eser.o eeth.o eioapic.o etm.o
+TGTOBJS = emc.o eser.o eeth.o eioapic.o etm.o esd.o
 TESTENTS = tintr.to tethim.to tmii.to tethim_read.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
@@ -41,6 +41,7 @@ ethim.o: ethim.c ethim.h include/eth.h
 ethim.to: ethim.c ethim.h include/eth.h
 etm.o: etm.c intrim.h include/intr.h include/led.h include/quark.h include/ser.h
 eeth.o: eeth.c ethim.h include/eth.h
+esd.o: esd.c
 hstbr.o: hstbr.c include/quark.h include/hstbr.h
 serout.o: serout.c include/ser.h serim.h
 serstub.to: serstub.c

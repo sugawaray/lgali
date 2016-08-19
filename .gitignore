@@ -2,6 +2,7 @@
 *.to
 /eioapic
 /emc
+/esd
 /eser
 /cnf
 /eeth
