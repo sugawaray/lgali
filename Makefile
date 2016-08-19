@@ -1,7 +1,7 @@
 .POSIX:
 .SUFFIXES: .o .to .s
 
-TGTOBJS = eintr.o eled.o emc.o eser.o eeth.o eioapic.o etm.o
+TGTOBJS = emc.o eser.o eeth.o eioapic.o etm.o
 TESTENTS = tintr.to tethim.to tmii.to tethim_read.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
