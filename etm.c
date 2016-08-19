@@ -22,7 +22,6 @@ static
 void
 initidt()
 {
-#if 1
 	int i, c;
 	char tp[6];
 	struct Idtrec *rec;
@@ -56,53 +55,16 @@ initidt()
 	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
 	lidt(tp);
 	sti();
-#else
-	char tp[6];
-	struct Idtrec *rec;
-
-	sidt(tp);
-	mmemcpy(idt, *(u32 *)(tp + 2), *(u16 *)tp + 1);
-	rec = &idt[Irqstimer];
-	idtrsetssel(rec, 0x02);
-	idtrsettype(rec, IDTRINTR);
-	idtrsetad(rec, tickirqf);
-
-	rec = &idt[Irqtimer];
-	idtrsetssel(rec, 0x02);
-	idtrsettype(rec, IDTRINTR);
-	idtrsetad(rec, timerirqf);
-
-	rec = &idt[Irqspurious];
-	idtrsetssel(rec, 0x02);
-	idtrsettype(rec, IDTRINTR);
-	idtrsetad(rec, intrdef);
-#endif
 }
 
 static
 void
-#if 1
 initic8259()
-#else
-initintr()
-#endif
 {
-#if 1
 	cli();
 	ic8259init(Irqstimer);
-	ic8259setmsk(0xFE, 0xFF);
+	ic8259setmsk(0xfe, 0xff);
 	sti();
-#else
-	char tp[6];
-
-	cli();
-	ic8259init(Irqstimer);
-	ic8259setmsk(0xFE, 0xFF);
-	lapicinit(Irqspurious);
-	packt((const char *)idt, sizeof idt / sizeof idt[0], tp);
-	lidt(tp);
-	sti();
-#endif
 }
 
 int
@@ -118,11 +80,7 @@ main()
 		ledmemit(5, 100);
 	else {
 		initidt();
-#if 1
 		initic8259();
-#else
-		initintr();
-#endif
 		stimerstart(HZ);
 		timerinit(Irqtimer);
 		timerstart(Lhz, HZ);
