@@ -67,7 +67,7 @@ enum {
 	NormalCmds	= 0x0,
 	RespLen48	= 0x2,
 	V33	= 0x7,
-	Freq	= 0x0c,
+	Freq	= 400,
 	DividedClockMode	= 0x0,
 	HighSpeedMode	= 0x1,
 	BitMode1	= 0x0
@@ -195,7 +195,7 @@ sdenclk()
 	u16 r;
 	u8 d;
 
-	d = sdcalcdivclk(sdxbfreq(R32(RCapabilities)), Freq);
+	d = sdcalcdivclk(sdxbfreq(R32(RCapabilities)) * 1000, Freq);
 	r = 0;
 	r |= d << OSdclkFreqSel;
 	r |= 0 << OUprSdclkFreqSel;
@@ -222,6 +222,9 @@ sdcalcdivclk(int base, int tgt)
 	q = base / tgt;
 	if (q < 1)
 		return 0;
+/* TODO bug */
+	if ((base / tgt) % 2)
+		q *= 2;
 	i = 0;
 	for (; q != 1; q >>= 1)
 		++i;

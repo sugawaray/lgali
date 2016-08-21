@@ -35,7 +35,7 @@ sdcalcdivclkeqt()
 {
 	u8 r;
 
-	r = sdcalcdivclk(50, 50);
+	r = sdcalcdivclk(50000, 50000);
 	AEQ(0x00, r);
 }
 
@@ -45,7 +45,7 @@ sdcalcdivclkerrt()
 {
 	u8 r;
 
-	r = sdcalcdivclk(25, 50);
+	r = sdcalcdivclk(25000, 50000);
 	AEQ(0x00, r);
 }
 
@@ -55,8 +55,8 @@ sdcalcdivclk1t()
 {
 	u8 r;
 
-	r = sdcalcdivclk(50, 20);
-	AEQ(1, r);
+	r = sdcalcdivclk(50000, 400);
+	AEQ(7, r);
 }
 
 int
