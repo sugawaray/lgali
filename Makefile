@@ -2,10 +2,10 @@
 .SUFFIXES: .o .to .s
 
 TGTOBJS = emc.o eser.o eeth.o eioapic.o etm.o esd.o
-TESTENTS = tintr.to tethim.to tmii.to tethim_read.to
+TESTENTS = tintr.to tethim.to tmii.to tethim_read.to tsd.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
-OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o hstbr.o pit8254.o tmim.o lapic.o lapic1.o
+OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o hstbr.o pit8254.o tmim.o lapic.o lapic1.o sd.o
 HOBJS = serout.o
 TOBJS = serstub.to $(OBJS:.o=.to)
 
@@ -19,6 +19,7 @@ calltest:
 	./tmii
 	./tethim
 	./tethim_read
+	./tsd
 
 $(TARGETS): $(TGTOBJS) $(OBJS) $(HOBJS)
 	$(LD) -o $@ ${@}.o $(OBJS) $(HOBJS) $(LDFLAGS)
@@ -41,17 +42,20 @@ ethim.o: ethim.c ethim.h include/eth.h
 ethim.to: ethim.c ethim.h include/eth.h
 etm.o: etm.c intrim.h include/intr.h include/led.h include/quark.h include/ser.h
 eeth.o: eeth.c ethim.h include/eth.h
-esd.o: esd.c
+esd.o: esd.c include/quark.h include/led.h include/ser.h
 hstbr.o: hstbr.c include/quark.h include/hstbr.h
 serout.o: serout.c include/ser.h serim.h
 serstub.to: serstub.c
 tethim_read.to: tethim_read.c ethim.h include/quark.h
+tsd.to: tsd.c sdim.h
 pit8254.o: pit8254.s include/pit8254.h
+sd.o: sd.c sdim.h
 tmim.o: tmim.s include/tick.h
 lapic.o: lapic.c include/lapic.h
 lapic1.o: lapic1.s
 include/intr.h: include/types.h
 include/lapic.h: include/types.h
+include/lib.h: include/types.h
 include/mii.h: include/types.h
 include/quark.h: include/types.h
 include/tick.h: include/types.h
