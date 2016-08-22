@@ -2,7 +2,7 @@
 .SUFFIXES: .o .to .s
 
 TGTOBJS = emc.o eser.o eeth.o eioapic.o etm.o esd.o
-TESTENTS = tintr.to tethim.to tmii.to tethim_read.to tsd.to
+TESTENTS = tintr.to tethim.to tmii.to tethim_read.to tsd.to tsd_cmd.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
 OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o hstbr.o pit8254.o tmim.o lapic.o lapic1.o sd.o
@@ -20,6 +20,7 @@ calltest:
 	./tethim
 	./tethim_read
 	./tsd
+	./tsd_cmd
 
 $(TARGETS): $(TGTOBJS) $(OBJS) $(HOBJS)
 	$(LD) -o $@ ${@}.o $(OBJS) $(HOBJS) $(LDFLAGS)
@@ -48,6 +49,7 @@ serout.o: serout.c include/ser.h serim.h
 serstub.to: serstub.c
 tethim_read.to: tethim_read.c ethim.h include/quark.h
 tsd.to: tsd.c sdim.h
+tsd_cmd.to: tsd_cmd.c
 pit8254.o: pit8254.s include/pit8254.h
 sd.o: sd.c sdim.h
 tmim.o: tmim.s include/tick.h
