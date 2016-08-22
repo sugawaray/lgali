@@ -33,8 +33,6 @@ main()
 	sdinistat();
 	sdenclk();
 	sdclrstat();
-	sddbg();
-	wait();
 	sdcmd0();
 	r = sdcvalid(SdV27t36);
 	seroutf("condition validation result(0x%X)\r\n", r);
