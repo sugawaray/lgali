@@ -110,12 +110,7 @@ cmd(u16 c, u32 a)
 	while (R32(RPreState) & OCmdInhibitCmd)
 		;
 	R32(RArgument) = a;
-#if 0
 	R16(RCmd) = c;
-#else
-	R8(RCmd) = c & 0x00ff;
-	R8(RCmd + 1) = (u16)(c & 0xff00) >> 0x8;
-#endif
 }
 
 void
@@ -174,8 +169,6 @@ sdcvalid(u8 vhs)
 	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
 		;
 
-	while ((R32(RPreState) & (1 << OCmdInhibitCmd)) || (R32(RPreState) & (1 << OCmdInhibitDat)))
-		;
 	return R32(RResponse0) == a;
 }
 

@@ -36,11 +36,7 @@ main()
 	sddbg();
 	wait();
 	sdcmd0();
-#if 1
 	r = sdcvalid(SdV27t36);
-#else
-	r = sdcvalid(SdVLowRng);
-#endif
 	seroutf("condition validation result(0x%X)\r\n", r);
 	serout("processing done\r\n");
 	sddbg();
