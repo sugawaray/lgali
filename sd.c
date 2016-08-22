@@ -217,16 +217,12 @@ sdxbfreq(u32 v)
 u8
 sdcalcdivclk(int base, int tgt)
 {
-	int i, q;
+	int i;
 
-	q = base / tgt;
-	if (q < 1)
+	if (base < tgt)
 		return 0;
-/* TODO bug */
-	if ((base / tgt) % 2)
-		q *= 2;
 	i = 0;
-	for (; q != 1; q >>= 1)
+	for (; base > tgt; base >>= 1)
 		++i;
 	return i;
 }
@@ -275,9 +271,6 @@ sdinireg()
 
 	t = R8(RHostCtl);
 	t &= ~(1 << OHiSpdEn);
-#if 0
-	t |= HighSpeedMode << OHiSpdEn;
-#endif
 	t &= ~(1 << ODataTxWid);
 	t |= BitMode1 << ODataTxWid;
 	t |= 1 << OLedCtl;
