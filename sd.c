@@ -58,12 +58,15 @@ enum {
 	OCmdComp	= 0x0,
 	OHiSpdEn	= 0x2,
 	ODataTxWid	= 0x1,
-	OLedCtl	= 0x0
+	OLedCtl	= 0x0,
+	OCSAppCmd	= 0x5
 };
 
 enum {
-	Cmd0	= 0x00,
-	Cmd8	= 0x08,
+	Cmd0	= 0,
+	Cmd8	= 8,
+	Cmd55	= 55,
+	Acmd41	= 41,
 	NormalCmds	= 0x0,
 	RespLen48	= 0x2,
 	V33	= 0x7,
@@ -76,7 +79,8 @@ enum {
 enum {
 	OArg8Vhs	= 0x08,
 	MArg8Vhs	= 0x0f,
-	OArg8CkPt	= 0x00
+	OArg8CkPt	= 0x00,
+	OArg55Rca	= 0x10
 };
 
 static u32 base;
@@ -101,6 +105,22 @@ sdclrstat()
 	R16(RNmlIntStatus) = t;
 
 	R16(RErrIntStatus) = 0xffff;
+}
+
+static
+u16
+nodatacmdr48(u8 ind)
+{
+	u16 c;
+
+	c = 0;
+	c |= ind << OCmdIndex;
+	c |= NormalCmds << OCmdType;
+	c |= 0 << ODataPrSel;
+	c |= 0 << OCmdIndexChkEn;
+	c |= 1 << OCmdCrcChkEn;
+	c |= RespLen48 << ORespTypeSel;
+	return c;
 }
 
 static
@@ -270,4 +290,32 @@ sdinireg()
 	R8(RHostCtl) = t;
 
 	R16(0xc) = 0;
+}
+
+u16
+sdcmd55()
+{
+	return nodatacmdr48(Cmd55);
+}
+
+u32
+sdgenarg55(u16 rca)
+{
+	return rca << OArg55Rca;
+}
+
+int
+sdenappcmd()
+{
+	sdclrstat();
+	cmd(sdcmd55(), sdgenarg55(0));
+	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
+		;
+	return R32(RResponse0) & (1 << OCSAppCmd);
+}
+
+u16
+sdacmd41()
+{
+	return nodatacmdr48(Acmd41);
 }

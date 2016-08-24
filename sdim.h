@@ -18,3 +18,7 @@ u8 sdcalcdivclk(int base, int tgt);
 void sddbg();
 void sdclrstat();
 void sdinireg();
+u16 sdcmd55();
+u32 sdgenarg55(u16 rca);
+int sdenappcmd();
+u16 sdacmd41();
