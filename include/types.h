@@ -9,5 +9,6 @@ typedef unsigned	u32;
 typedef i32 off_t;
 typedef i32 ssize_t;
 typedef u32 size_t;
+typedef u32 time_t;
 
 #endif

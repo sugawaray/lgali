@@ -80,7 +80,19 @@ enum {
 	OArg8Vhs	= 0x08,
 	MArg8Vhs	= 0x0f,
 	OArg8CkPt	= 0x00,
-	OArg55Rca	= 0x10
+	OArg55Rca	= 0x10,
+	OArgA41Hcs	= 0x1e
+};
+
+enum {
+	OOcrV27t28	= 0x0f,
+	OOcrV28t29	= 0x10,
+	OOcrV29t30	= 0x11,
+	OOcrV30t31	= 0x12,
+	OOcrV31t32	= 0x13,
+	OOcrV32t33	= 0x14,
+	OOcrV33t34	= 0x15,
+	OOcrBusy	= 0x1f
 };
 
 static u32 base;
@@ -318,4 +330,37 @@ u16
 sdacmd41()
 {
 	return nodatacmdr48(Acmd41);
+}
+
+u32
+sdgenarga41()
+{
+#if 0
+	return (1 << OArgA41Hcs) | (1 << OOcrV33t34);
+#else
+	return (1 << OArgA41Hcs) | (1 << OOcrV32t33);
+#endif
+}
+
+int
+sdcvoltwin()
+{
+	int r;
+	u16 c;
+	u32 a;
+	u32 res;
+
+	c = sdacmd41();
+	a = sdgenarga41();
+	do {
+		r = sdenappcmd();
+		if (!r)
+			return -1;
+		sdclrstat();
+		cmd(c, a);
+		while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
+			;
+		res = R32(RResponse0);
+	} while ((res & (1 << OOcrBusy)) == 0);
+	return 0;
 }

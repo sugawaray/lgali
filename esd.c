@@ -1,4 +1,5 @@
 #include "sdim.h"
+#include "ctl.h"
 #include <led.h>
 #include <quark.h>
 #include <ser.h>
@@ -22,6 +23,7 @@ main()
 		for (;;)
 			;
 	}
+	init();
 	serout("serinit done\r\n");
 	pcicsetdev(Dev);
 	pcicsetfn(Fn);
@@ -36,6 +38,8 @@ main()
 	sdcmd0();
 	r = sdcvalid(SdV27t36);
 	seroutf("condition validation result(0x%X)\r\n", r);
+	r = sdcvoltwin();
+	seroutf("SD_SEND_OP_COND result(0x%X)\r\n", r);
 	serout("processing done\r\n");
 	sddbg();
 	for (;;)

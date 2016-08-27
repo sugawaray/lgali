@@ -30,11 +30,21 @@ acmd41r_test()
 	AEQ(0x290a, r);
 }
 
+static
+void
+argc41r_test()
+{
+	u32 v;
+	v = sdgenarga41();
+	AEQ(0x40100000, v);
+}
+
 int
 main()
 {
 	testrun("cmd55 command register", cmd55r_test);
 	testrun("cmd55 argument register", argc55r_test);
 	testrun("acmd41 command register", acmd41r_test);
+	testrun("acmd41 argument register", argc41r_test);
 	return 0;
 }

@@ -22,3 +22,5 @@ u16 sdcmd55();
 u32 sdgenarg55(u16 rca);
 int sdenappcmd();
 u16 sdacmd41();
+u32 sdgenarga41();
+int sdcvoltwin();
