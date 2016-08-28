@@ -149,6 +149,14 @@ cmd(u16 c, u32 a)
 	R16(RCmd) = c;
 }
 
+static
+void
+waitcomp()
+{
+	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
+		;
+}
+
 void
 sdswrst()
 {
@@ -202,8 +210,7 @@ sdcvalid(u8 vhs)
 
 	sdclrstat();
 	cmd(c, a);
-	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
-		;
+	waitcomp();
 
 	return R32(RResponse0) == a;
 }
@@ -325,8 +332,7 @@ sdenappcmd()
 {
 	sdclrstat();
 	cmd(sdcmd55(), sdgenarg55(0));
-	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
-		;
+	waitcomp();
 	return R32(RResponse0) & (1 << OCSAppCmd);
 }
 
@@ -363,8 +369,7 @@ sdcvoltwin()
 			return -1;
 		sdclrstat();
 		cmd(c, a);
-		while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
-			;
+		waitcomp();
 		res = R32(RResponse0);
 	} while ((res & (1 << OOcrBusy)) == 0);
 	if (res & (1 << OOcrCcs))
@@ -394,8 +399,7 @@ sdgetcid()
 {
 	sdclrstat();
 	cmd(sdcmd2(), 0);
-	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
-		;
+	waitcomp();
 	seroutf("CID: %X,%X,%X,%X\r\n",
 		R32(RResponse6), R32(RResponse4), R32(RResponse2),
 		R32(RResponse0));
@@ -408,8 +412,7 @@ sdinitrca(struct Sdctx *o)
 
 	sdclrstat();
 	cmd(nodatacmdr48(Cmd3), 0);
-	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
-		;
+	waitcomp();
 	o->rca = (R32(RResponse0) >> 0x10) & 0xffff;
 	stat = (R32(RResponse0) & 0xffff);
 	seroutf("Card status: %X\r\n", stat);
