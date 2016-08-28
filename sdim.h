@@ -5,6 +5,10 @@ enum {
 	SdVLowRng	= 0x2
 };
 
+struct Sdctx {
+	u16	rca;
+};
+
 void sdsetbar0(u32 v);
 void sdpwrup();
 void sdswrst();
@@ -26,4 +30,4 @@ u32 sdgenarga41();
 int sdcvoltwin();
 u16 sdcmd2();
 void sdgetcid();
-void sdgetrca();
+void sdinitrca(struct Sdctx *o);

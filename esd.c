@@ -14,6 +14,7 @@ main()
 {
 	int r;
 	u32 base;
+	struct Sdctx ctx;
 
 	wait();
 	ledminit();
@@ -41,7 +42,8 @@ main()
 	r = sdcvoltwin();
 	seroutf("SD_SEND_OP_COND result(0x%X)\r\n", r);
 	sdgetcid();
-	sdgetrca();
+	sdinitrca(&ctx);
+	seroutf("RCA: %X\r\n", ctx.rca);
 	serout("processing done\r\n");
 	sddbg();
 	for (;;)

@@ -402,15 +402,15 @@ sdgetcid()
 }
 
 void
-sdgetrca()
+sdinitrca(struct Sdctx *o)
 {
-	u16 rca, stat;
+	u16 stat;
+
 	sdclrstat();
 	cmd(nodatacmdr48(Cmd3), 0);
 	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
 		;
-	rca = (R32(RResponse0) >> 0x10) & 0xffff;
+	o->rca = (R32(RResponse0) >> 0x10) & 0xffff;
 	stat = (R32(RResponse0) & 0xffff);
-	seroutf("RCA: %X\r\n", rca);
 	seroutf("Card status: %X\r\n", stat);
 }
