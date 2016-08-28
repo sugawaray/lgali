@@ -24,3 +24,6 @@ int sdenappcmd();
 u16 sdacmd41();
 u32 sdgenarga41();
 int sdcvoltwin();
+u16 sdcmd2();
+void sdgetcid();
+void sdgetrca();

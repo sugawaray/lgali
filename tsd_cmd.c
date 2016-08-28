@@ -39,6 +39,15 @@ argc41r_test()
 	AEQ(0x40100000, v);
 }
 
+static
+void
+cmd2r_test()
+{
+	u16 r;
+	r = sdcmd2();
+	AEQ(0x0209, r);
+}
+
 int
 main()
 {
@@ -46,5 +55,6 @@ main()
 	testrun("cmd55 argument register", argc55r_test);
 	testrun("acmd41 command register", acmd41r_test);
 	testrun("acmd41 argument register", argc41r_test);
+	testrun("cmd2 command register", cmd2r_test);
 	return 0;
 }

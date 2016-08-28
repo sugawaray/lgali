@@ -40,6 +40,8 @@ main()
 	seroutf("condition validation result(0x%X)\r\n", r);
 	r = sdcvoltwin();
 	seroutf("SD_SEND_OP_COND result(0x%X)\r\n", r);
+	sdgetcid();
+	sdgetrca();
 	serout("processing done\r\n");
 	sddbg();
 	for (;;)

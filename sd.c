@@ -64,11 +64,14 @@ enum {
 
 enum {
 	Cmd0	= 0,
+	Cmd2	= 2,
+	Cmd3	= 3,
 	Cmd8	= 8,
 	Cmd55	= 55,
 	Acmd41	= 41,
 	NormalCmds	= 0x0,
 	RespLen48	= 0x2,
+	RespLen136	= 0x1,
 	V33	= 0x7,
 	Freq	= 400,
 	DividedClockMode	= 0x0,
@@ -92,6 +95,7 @@ enum {
 	OOcrV31t32	= 0x13,
 	OOcrV32t33	= 0x14,
 	OOcrV33t34	= 0x15,
+	OOcrCcs	= 0x1e,
 	OOcrBusy	= 0x1f
 };
 
@@ -345,6 +349,7 @@ sdgenarga41()
 int
 sdcvoltwin()
 {
+/* TODO: implement timeout for the case that the busy flag is not set forever. */
 	int r;
 	u16 c;
 	u32 a;
@@ -362,5 +367,50 @@ sdcvoltwin()
 			;
 		res = R32(RResponse0);
 	} while ((res & (1 << OOcrBusy)) == 0);
+	if (res & (1 << OOcrCcs))
+		seroutf("The card is a SDHC or a SDXC.\r\n");
+	else
+		seroutf("The card is neighter a SDHC nor a SDXC.\r\n");
 	return 0;
+}
+
+u16
+sdcmd2()
+{
+	u16 c;
+
+	c = 0;
+	c |= Cmd2 << OCmdIndex;
+	c |= NormalCmds << OCmdType;
+	c |= 0 << ODataPrSel;
+	c |= 0 << OCmdIndexChkEn;
+	c |= 1 << OCmdCrcChkEn;
+	c |= RespLen136 << ORespTypeSel;
+	return c;
+}
+
+void
+sdgetcid()
+{
+	sdclrstat();
+	cmd(sdcmd2(), 0);
+	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
+		;
+	seroutf("CID: %X,%X,%X,%X\r\n",
+		R32(RResponse6), R32(RResponse4), R32(RResponse2),
+		R32(RResponse0));
+}
+
+void
+sdgetrca()
+{
+	u16 rca, stat;
+	sdclrstat();
+	cmd(nodatacmdr48(Cmd3), 0);
+	while ((R16(RNmlIntStatus) & (1 << OCmdComp)) == 0)
+		;
+	rca = (R32(RResponse0) >> 0x10) & 0xffff;
+	stat = (R32(RResponse0) & 0xffff);
+	seroutf("RCA: %X\r\n", rca);
+	seroutf("Card status: %X\r\n", stat);
 }
