@@ -31,6 +31,7 @@ main()
 	pcicpr();
 	pcicr32(POFFBAR0, &base);
 	sdsetbar0(base);
+	sdinitctx(&ctx);
 	sdpwrup();
 	sdinireg();
 	sdinistat();
@@ -44,6 +45,9 @@ main()
 	sdgetcid();
 	sdinitrca(&ctx);
 	seroutf("RCA: %X\r\n", ctx.rca);
+	sdgetcsd(&ctx);
+	sdprcsd(&ctx);
+	sdselect(&ctx);
 	serout("processing done\r\n");
 	sddbg();
 	for (;;)

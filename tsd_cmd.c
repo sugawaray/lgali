@@ -48,6 +48,16 @@ cmd2r_test()
 	AEQ(0x0209, r);
 }
 
+static
+void
+argc9r_test()
+{
+	u32 v;
+
+	v = sdgenarg9(0x8001);
+	AEQ(0x80010000, v);
+}
+
 int
 main()
 {
@@ -56,5 +66,6 @@ main()
 	testrun("acmd41 command register", acmd41r_test);
 	testrun("acmd41 argument register", argc41r_test);
 	testrun("cmd2 command register", cmd2r_test);
+	testrun("cmd9 argument register", argc9r_test);
 	return 0;
 }

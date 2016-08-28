@@ -1,4 +1,5 @@
 #include "sdim.h"
+#include <lib.h>
 #include <ser.h>
 
 enum {
@@ -66,7 +67,10 @@ enum {
 	Cmd0	= 0,
 	Cmd2	= 2,
 	Cmd3	= 3,
+	Cmd7	= 7,
 	Cmd8	= 8,
+	Cmd9	= 9,
+	Cmd17	= 17,
 	Cmd55	= 55,
 	Acmd41	= 41,
 	NormalCmds	= 0x0,
@@ -84,7 +88,9 @@ enum {
 	MArg8Vhs	= 0x0f,
 	OArg8CkPt	= 0x00,
 	OArg55Rca	= 0x10,
-	OArgA41Hcs	= 0x1e
+	OArgA41Hcs	= 0x1e,
+	OArg9Rca	= 0x10,
+	OArgRca	= 0x10
 };
 
 enum {
@@ -137,6 +143,13 @@ nodatacmdr(u8 ind, u8 resp)
 	c |= 1 << OCmdCrcChkEn;
 	c |= resp << ORespTypeSel;
 	return c;
+}
+
+static
+u32
+genrcaarg(u16 rca)
+{
+	return rca << OArgRca;
 }
 
 static
@@ -324,7 +337,7 @@ sdcmd55()
 u32
 sdgenarg55(u16 rca)
 {
-	return rca << OArg55Rca;
+	return genrcaarg(rca);
 }
 
 int
@@ -407,4 +420,43 @@ sdinitrca(struct Sdctx *o)
 	o->rca = (R32(RResponse0) >> 0x10) & 0xffff;
 	stat = (R32(RResponse0) & 0xffff);
 	seroutf("Card status: %X\r\n", stat);
+}
+
+void
+sdgetcsd(struct Sdctx *o)
+{
+	sdclrstat();
+	cmd(nodatacmdr(Cmd9, RespLen136), sdgenarg9(o->rca));
+	waitcomp();
+	o->csd[0] = R32(RResponse0);
+	o->csd[1] = R32(RResponse2);
+	o->csd[2] = R32(RResponse4);
+	o->csd[3] = R32(RResponse6);
+}
+
+void
+sdprcsd(struct Sdctx *o)
+{
+	seroutf("CSD: 0x%X,%X,%X,%X\r\n", o->csd[3], o->csd[2],
+		o->csd[1], o->csd[0]);
+}
+
+u32
+sdgenarg9(u16 rca)
+{
+	return genrcaarg(rca);
+}
+
+void
+sdinitctx(struct Sdctx *o)
+{
+	mmemset(o, 0, sizeof *o);
+}
+
+void
+sdselect(struct Sdctx *o)
+{
+	sdclrstat();
+	cmd(nodatacmdr(Cmd7, RespLen48), genrcaarg(o->rca));
+	waitcomp();
 }

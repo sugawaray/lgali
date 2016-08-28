@@ -6,10 +6,12 @@ enum {
 };
 
 struct Sdctx {
+	u32	csd[4];
 	u16	rca;
 };
 
 void sdsetbar0(u32 v);
+void sdinitctx(struct Sdctx *o);
 void sdpwrup();
 void sdswrst();
 void sdcmd0();
@@ -31,3 +33,7 @@ int sdcvoltwin();
 u16 sdcmd2();
 void sdgetcid();
 void sdinitrca(struct Sdctx *o);
+void sdgetcsd(struct Sdctx *o);
+void sdprcsd(struct Sdctx *o);
+u32 sdgenarg9(u16 rca);
+void sdselect(struct Sdctx *o);
