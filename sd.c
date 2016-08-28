@@ -125,7 +125,7 @@ sdclrstat()
 
 static
 u16
-nodatacmdr48(u8 ind)
+nodatacmdr(u8 ind, u8 resp)
 {
 	u16 c;
 
@@ -135,7 +135,7 @@ nodatacmdr48(u8 ind)
 	c |= 0 << ODataPrSel;
 	c |= 0 << OCmdIndexChkEn;
 	c |= 1 << OCmdCrcChkEn;
-	c |= RespLen48 << ORespTypeSel;
+	c |= resp << ORespTypeSel;
 	return c;
 }
 
@@ -318,7 +318,7 @@ sdinireg()
 u16
 sdcmd55()
 {
-	return nodatacmdr48(Cmd55);
+	return nodatacmdr(Cmd55, RespLen48);
 }
 
 u32
@@ -339,7 +339,7 @@ sdenappcmd()
 u16
 sdacmd41()
 {
-	return nodatacmdr48(Acmd41);
+	return nodatacmdr(Acmd41, RespLen48);
 }
 
 u32
@@ -382,16 +382,7 @@ sdcvoltwin()
 u16
 sdcmd2()
 {
-	u16 c;
-
-	c = 0;
-	c |= Cmd2 << OCmdIndex;
-	c |= NormalCmds << OCmdType;
-	c |= 0 << ODataPrSel;
-	c |= 0 << OCmdIndexChkEn;
-	c |= 1 << OCmdCrcChkEn;
-	c |= RespLen136 << ORespTypeSel;
-	return c;
+	return nodatacmdr(Cmd2, RespLen136);
 }
 
 void
@@ -411,7 +402,7 @@ sdinitrca(struct Sdctx *o)
 	u16 stat;
 
 	sdclrstat();
-	cmd(nodatacmdr48(Cmd3), 0);
+	cmd(nodatacmdr(Cmd3, RespLen48), 0);
 	waitcomp();
 	o->rca = (R32(RResponse0) >> 0x10) & 0xffff;
 	stat = (R32(RResponse0) & 0xffff);
