@@ -3,6 +3,9 @@
 #include <ser.h>
 
 enum {
+	RBlkSize	= 0x04,
+	RTxMode	= 0x0c,
+	RBufDataPort	= 0x20,
 	RPreState	= 0x24,
 	RArgument	= 0x08,
 	RCmd	= 0x0e,
@@ -60,7 +63,11 @@ enum {
 	OHiSpdEn	= 0x2,
 	ODataTxWid	= 0x1,
 	OLedCtl	= 0x0,
-	OCSAppCmd	= 0x5
+	OCSAppCmd	= 0x5,
+	OCSCurrSt	= 0x9,
+	MCSCurrSt	= 0xffff,
+	OTrBlkSize	= 0x0,
+	OBufRdEn	= 0x0b
 };
 
 enum {
@@ -70,6 +77,7 @@ enum {
 	Cmd7	= 7,
 	Cmd8	= 8,
 	Cmd9	= 9,
+	Cmd13	= 13,
 	Cmd17	= 17,
 	Cmd55	= 55,
 	Acmd41	= 41,
@@ -80,7 +88,9 @@ enum {
 	Freq	= 400,
 	DividedClockMode	= 0x0,
 	HighSpeedMode	= 0x1,
-	BitMode1	= 0x0
+	BitMode1	= 0x0,
+	CSTran	= 0x4,
+	TrBlkSize512	= 0x0200
 };
 
 enum {
@@ -131,14 +141,14 @@ sdclrstat()
 
 static
 u16
-nodatacmdr(u8 ind, u8 resp)
+cmdr(u8 ind, u8 resp, int dat)
 {
 	u16 c;
 
 	c = 0;
 	c |= ind << OCmdIndex;
 	c |= NormalCmds << OCmdType;
-	c |= 0 << ODataPrSel;
+	c |= (dat & 0x1) << ODataPrSel;
 	c |= 0 << OCmdIndexChkEn;
 	c |= 1 << OCmdCrcChkEn;
 	c |= resp << ORespTypeSel;
@@ -295,6 +305,7 @@ void
 sddbg()
 {
 	serout("========================================================\r\n");
+	seroutf("BLK_SIZE(0x%X)\r\n", R16(RBlkSize));
 	seroutf("CAPABILITIES(0x%X)\r\n", R32(RCapabilities));
 	seroutf("CAPABILITIES2(0x%X)\r\n", R32(RCapabilities2));
 	seroutf("CLK_CTL(0x%X)\r\n", R16(RClkCtl));
@@ -326,12 +337,14 @@ sdinireg()
 	R8(RHostCtl) = t;
 
 	R16(0xc) = 0;
+
+	R16(RBlkSize) = (TrBlkSize512 << OTrBlkSize);
 }
 
 u16
 sdcmd55()
 {
-	return nodatacmdr(Cmd55, RespLen48);
+	return cmdr(Cmd55, RespLen48, 0);
 }
 
 u32
@@ -352,7 +365,7 @@ sdenappcmd()
 u16
 sdacmd41()
 {
-	return nodatacmdr(Acmd41, RespLen48);
+	return cmdr(Acmd41, RespLen48, 0);
 }
 
 u32
@@ -395,7 +408,7 @@ sdcvoltwin()
 u16
 sdcmd2()
 {
-	return nodatacmdr(Cmd2, RespLen136);
+	return cmdr(Cmd2, RespLen136, 0);
 }
 
 void
@@ -415,7 +428,7 @@ sdinitrca(struct Sdctx *o)
 	u16 stat;
 
 	sdclrstat();
-	cmd(nodatacmdr(Cmd3, RespLen48), 0);
+	cmd(cmdr(Cmd3, RespLen48, 0), 0);
 	waitcomp();
 	o->rca = (R32(RResponse0) >> 0x10) & 0xffff;
 	stat = (R32(RResponse0) & 0xffff);
@@ -426,7 +439,7 @@ void
 sdgetcsd(struct Sdctx *o)
 {
 	sdclrstat();
-	cmd(nodatacmdr(Cmd9, RespLen136), sdgenarg9(o->rca));
+	cmd(cmdr(Cmd9, RespLen136, 0), sdgenarg9(o->rca));
 	waitcomp();
 	o->csd[0] = R32(RResponse0);
 	o->csd[1] = R32(RResponse2);
@@ -457,6 +470,30 @@ void
 sdselect(struct Sdctx *o)
 {
 	sdclrstat();
-	cmd(nodatacmdr(Cmd7, RespLen48), genrcaarg(o->rca));
+	cmd(cmdr(Cmd7, RespLen48, 0), genrcaarg(o->rca));
 	waitcomp();
+}
+
+void
+sdread(struct Sdctx *o, char *b)
+{
+	u16 c;
+	u32 a, v;
+	char *bb;
+
+	R16(RTxMode) = 0x0010;
+	c = cmdr(Cmd13, RespLen48, 0);
+	a = genrcaarg(o->rca);
+	sdclrstat();
+	cmd(cmdr(Cmd17, RespLen48, 1), 0);
+	waitcomp();
+	while ((R32(RPreState) & (1 << OBufRdEn)) == 0)
+		;
+	bb = b;
+	do {
+		v = R32(RBufDataPort);
+		mmemcpy(b, &v, sizeof v);
+		b += sizeof v;
+		v = R32(RPreState);
+	} while ((v & (1 << OBufRdEn)) && (b - bb) < 512);
 }

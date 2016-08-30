@@ -37,3 +37,4 @@ void sdgetcsd(struct Sdctx *o);
 void sdprcsd(struct Sdctx *o);
 u32 sdgenarg9(u16 rca);
 void sdselect(struct Sdctx *o);
+void sdread(struct Sdctx *o, char *b);

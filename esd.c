@@ -1,6 +1,7 @@
 #include "sdim.h"
 #include "ctl.h"
 #include <led.h>
+#include <lib.h>
 #include <quark.h>
 #include <ser.h>
 
@@ -9,12 +10,26 @@ enum {
 	Fn	= 0
 };
 
+static
+void
+pr(unsigned char *b, int sz)
+{
+	int i;
+
+	for (i = 0; i < sz; ++i) {
+		if (i % 16 == 0)
+			seroutf("\r\n%X ", i);
+		seroutf("%X ", b[i]);
+	}
+}
+
 int
 main()
 {
 	int r;
 	u32 base;
 	struct Sdctx ctx;
+	char b[512];
 
 	wait();
 	ledminit();
@@ -48,6 +63,9 @@ main()
 	sdgetcsd(&ctx);
 	sdprcsd(&ctx);
 	sdselect(&ctx);
+	mmemset(b, 0, sizeof b);
+	sdread(&ctx, b);
+	pr(b, sizeof b);
 	serout("processing done\r\n");
 	sddbg();
 	for (;;)
