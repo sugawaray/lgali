@@ -2,10 +2,10 @@
 .SUFFIXES: .o .to .s
 
 TGTOBJS = emc.o eser.o eeth.o eioapic.o etm.o esd.o
-TESTENTS = tintr.to tethim.to tmii.to tethim_read.to tsd.to tsd_cmd.to
+TESTENTS = tintr.to tethim.to tmii.to tethim_read.to tsd.to tsd_cmd.to tfat.to
 TARGETS = $(TGTOBJS:.o=)
 TESTTGTS = $(TESTENTS:.to=)
-OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o hstbr.o pit8254.o tmim.o lapic.o lapic1.o sd.o ctl.o time.o
+OBJS = intr.o lib.o mc.o quarkim.o ser.o serpri.o quark.o pcic.o led.o ethim.o mii.o ioapic.o hstbr.o pit8254.o tmim.o lapic.o lapic1.o sd.o ctl.o time.o fat.o
 HOBJS = serout.o
 TOBJS = serstub.to $(OBJS:.o=.to)
 
@@ -21,6 +21,7 @@ calltest:
 	./tethim_read
 	./tsd
 	./tsd_cmd
+	./tfat
 
 $(TARGETS): $(TGTOBJS) $(OBJS) $(HOBJS)
 	$(LD) -o $@ ${@}.o $(OBJS) $(HOBJS) $(LDFLAGS)
@@ -57,6 +58,8 @@ lapic.o: lapic.c include/lapic.h
 lapic1.o: lapic1.s
 ctl.o: ctl.c ctl.h
 time.o: time.c include/time.h
+tfat.to: tfat.c include/fat.h th.h
+fat.o: fat.c include/fat.h
 include/time.h: include/types.h
 include/intr.h: include/types.h
 include/lapic.h: include/types.h
