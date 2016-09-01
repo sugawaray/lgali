@@ -7,4 +7,4 @@ void *memset(void *s, int c, Tsize_t n);
 TANY fopen(const char *filename, const char *mode);
 int fclose(TANY fd);
 Tsize_t fread(void *ptr, Tsize_t sz, Tsize_t cnt, TANY fd);
-int feof(fd);
+int feof(TANY fd);
