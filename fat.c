@@ -13,7 +13,17 @@ enum {
 	OBpbSecPerTrk	= 0x18,
 	OBpbNumHeads	= 0x1a,
 	OBpbHiddSec	= 0x1c,
-	OBpbTotSec32	= 0x20
+	OBpbTotSec32	= 0x20,
+	OBpbFATSz32	= 0x24,
+	OBpbExtFlags	= 0x28,
+	OBpbFSVer	= 0x2a,
+	OBpbRootClus	= 0x2c,
+	OBpbFSInfo	= 0x30,
+	OBpbBkBootSec	= 0x32,
+	OBsDrvNum	= 0x40,
+	OBsBootSig	= 0x42,
+	OBsVolID	= 0x43,
+	OBsVolLab	= 0x47
 };
 
 #define M16(o)	(*(u16 *)(o))
@@ -39,4 +49,21 @@ rdbsbpb(struct BsBpb *o, const char *dat)
 	o->BPB_NumHeads = M16(dat + OBpbNumHeads);
 	o->BPB_HiddSec = M32(dat + OBpbHiddSec);
 	o->BPB_TotSec32 = M32(dat + OBpbTotSec32);
+}
+
+void
+rdbsbpb32(struct BsBpb32 *o, const char *dat)
+{
+	int i;
+	o->BPB_FATSz32 = M32(dat + OBpbFATSz32);
+	o->BPB_ExtFlags = M16(dat + OBpbExtFlags);
+	o->BPB_FSVer = M16(dat + OBpbFSVer);
+	o->BPB_RootClus = M32(dat + OBpbRootClus);
+	o->BPB_FSInfo = M16(dat + OBpbFSInfo);
+	o->BPB_BkBootSec = M16(dat + OBpbBkBootSec);
+	o->BS_DrvNum = dat[OBsDrvNum];
+	o->BS_BootSig = dat[OBsBootSig];
+	o->BS_VolID = M32(dat + OBsVolID);
+	for (i = 0; i < 11; ++i)
+		o->BS_VolLab[i] = dat[OBsVolLab + i];
 }

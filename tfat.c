@@ -76,9 +76,37 @@ rdbsbpb_test()
 	AEQ(0x00ed3800, o.BPB_TotSec32);
 }
 
+static
+void
+rdbsbpb32_test()
+{
+	struct BsBpb32 o;
+
+	rdbin();
+	memset(&o, 0, sizeof o);
+	o.BPB_ExtFlags = 0xffff;
+	o.BPB_FSVer = 0xffff;
+	rdbsbpb32(&o, buf);
+
+	AEQ(0x00003b31, o.BPB_FATSz32);
+	AEQ(0x0000, o.BPB_ExtFlags);
+	AEQ(0x0000, o.BPB_FSVer);
+	AEQ(0x00000002, o.BPB_RootClus);
+	AEQ(0x0001, o.BPB_FSInfo);
+	AEQ(0x0006, o.BPB_BkBootSec);
+	AEQ(0x80, o.BS_DrvNum);
+	AEQ(0x29, o.BS_BootSig);
+	AEQ(0x238c6189, o.BS_VolID);
+/*4e 4f 20 4e 41 4d 45 20 20 20 20 */
+	AEQ(0x4e, o.BS_VolLab[0]);
+	AEQ(0x4d, o.BS_VolLab[5]);
+	AEQ(0x20, o.BS_VolLab[10]);
+}
+
 int
 main()
 {
 	testrun("rdbsbpb", rdbsbpb_test);
+	testrun("rdbsbpb32", rdbsbpb32_test);
 	return 0;
 }
