@@ -5,6 +5,8 @@
 #define AEQ(e, x)	do { if ((e) != (x)) { testerror(testmsg("0x%08x != 0x%08x", (e), (x))); } } while (0)
 
 static char buf[512];
+static char *buf1;
+static int buf1sz;
 
 static
 void
@@ -23,6 +25,52 @@ rdbin()
 		p += fread(p, 1, sizeof buf - (p - buf), fd);
 	} while (!feof(fd) && (sizeof buf - (p - buf)) > 0);
 	fclose(fd);
+}
+
+static
+void
+rdbin1()
+{
+	int bsz;
+	TANY f;
+	char *p, *t;
+
+	buf1 = 0;
+	buf1sz = 0;
+	f = fopen("./fat", "rb");
+	if (f == 0) {
+		testerror("test error rdbin1");
+		return;
+	}
+
+	bsz = 512;
+	buf1 = malloc(bsz);
+	if (!buf1) {
+		testerror("test error rdbin1: memory");
+		fclose(f);
+		return;
+	}
+	p = buf1;
+	while (!feof(f)) {
+		if (bsz - (p - buf1) <= 0) {
+			bsz *= 2;
+			t = realloc(buf1, bsz);
+			if (!t) {
+				testerror("test error rdbin1: memory");
+				break;
+			}
+			p = t + (p - buf1);
+			buf1 = t;
+		}
+		p += fread(p, 1, bsz - (p - buf1), f);
+	}
+	if (!feof(f)) {
+		free(buf1);
+		buf1 = 0;
+	} else {
+		buf1sz = (int)ftell(f);
+	}
+	fclose(f);
 }
 
 static
@@ -97,10 +145,61 @@ rdbsbpb32_test()
 	AEQ(0x80, o.BS_DrvNum);
 	AEQ(0x29, o.BS_BootSig);
 	AEQ(0x238c6189, o.BS_VolID);
-/*4e 4f 20 4e 41 4d 45 20 20 20 20 */
 	AEQ(0x4e, o.BS_VolLab[0]);
 	AEQ(0x4d, o.BS_VolLab[5]);
 	AEQ(0x20, o.BS_VolLab[10]);
+}
+
+static
+void
+rddir_root_test()
+{
+	struct BsBpb b1;
+	struct BsBpb32 b2;
+	struct Dir o;
+
+	rdbin1();
+	rdbsbpb(&b1, buf1);
+	rdbsbpb32(&b2, buf1);
+	rddir(&o, buf1, &b1, &b2);
+	testerror(testmsg("BPB_FATSz16: %04x", b1.BPB_FATSz16));
+	testerror(testmsg("BPB_BytsPerSec: %04x", b1.BPB_BytsPerSec));
+	testerror(testmsg("BPB_RootClus: %08x", b2.BPB_RootClus));
+	testerror(testmsg("BPB_SecPerClus: %02x", b1.BPB_SecPerClus));
+	testerror(testmsg("DIR_Attr: %02x", o.DIR_Attr));
+	testerror(testmsg("DIR_FstClus: %08x", o.DIR_FstClus));
+	testerror(testmsg("DIR_Name: [%s]", o.DIR_Name));
+	testerror("assert fail. check output.");
+}
+
+static
+void
+fstdatsect_test()
+{
+	int i;
+	struct BsBpb b1;
+	struct BsBpb32 b2;
+
+	rdbin1();
+	rdbsbpb(&b1, buf1);
+	rdbsbpb32(&b2, buf1);
+	i = fstdatsect(&b1, &b2);
+	testerror(testmsg("%08x", i));
+}
+
+static
+void
+sctaddr_test()
+{
+	int i;
+	struct BsBpb b1;
+	struct BsBpb32 b2;
+
+	rdbin1();
+	rdbsbpb(&b1, buf1);
+	rdbsbpb32(&b2, buf1);
+	i = sctaddr(&b1, &b2);
+	testerror(testmsg("ADDR: %08x", i));
 }
 
 int
@@ -108,5 +207,8 @@ main()
 {
 	testrun("rdbsbpb", rdbsbpb_test);
 	testrun("rdbsbpb32", rdbsbpb32_test);
+	testrun("rddir root", rddir_root_test);
+	testrun("fstdatsect", fstdatsect_test);
+	testrun("sctaddr", sctaddr_test);
 	return 0;
 }

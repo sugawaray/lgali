@@ -67,3 +67,45 @@ rdbsbpb32(struct BsBpb32 *o, const char *dat)
 	for (i = 0; i < 11; ++i)
 		o->BS_VolLab[i] = dat[OBsVolLab + i];
 }
+
+void
+rddir(struct Dir *o, const char *dat, const struct BsBpb *b1,
+	const struct BsBpb32 *b2)
+{
+	int i;
+	u32 v32;
+	int sect1st;
+	int sectrtdir;
+
+	sect1st = fstdatsect(b1, b2);
+	sectrtdir = (b2->BPB_RootClus - 2) * b1->BPB_SecPerClus + sect1st;
+	v32 = M16(dat + sectrtdir * b1->BPB_BytsPerSec + 20) << 16;
+	v32 |= M16(dat + sectrtdir * b1->BPB_BytsPerSec + 26);
+	o->DIR_FstClus = v32;
+	for (i = 0; i < 11; ++i)
+		o->DIR_Name[i] = dat[sectrtdir * b1->BPB_BytsPerSec + i];
+	o->DIR_Name[11] = '\0';
+}
+
+int
+sctaddr(const struct BsBpb *b1, const struct BsBpb32 *b2)
+{
+	u32 v32;
+	int sect1st;
+	int sectrtdir;
+
+	sect1st = fstdatsect(b1, b2);
+	sectrtdir = (b2->BPB_RootClus - 2) * b1->BPB_SecPerClus + sect1st;
+	return sectrtdir * b1->BPB_BytsPerSec;
+}
+
+int
+fstdatsect(const struct BsBpb *b1, const struct BsBpb32 *b2)
+{
+	int v;
+	v = ((b1->BPB_RootEntCnt * 32) + (b1->BPB_BytsPerSec - 1)) /
+		b1->BPB_BytsPerSec;
+	v += b1->BPB_RsvdSecCnt;
+	v += b1->BPB_NumFATs * b2->BPB_FATSz32;
+	return v;
+}

@@ -31,5 +31,20 @@ struct BsBpb32 {
 	u8	BS_BootSig;
 };
 
+struct Dir {
+	u32	DIR_FileSize;
+	u32	DIR_FstClus;
+	u16	DIR_WrtTime;
+	u16	DIR_WrtDate;
+	u8	DIR_Attr;
+	u8	DIR_CrtTimeTenth;
+	u8	DIR_Name[12];
+};
+
 void rdbsbpb(struct BsBpb *b, const char *dat);
 void rdbsbpb32(struct BsBpb32 *b, const char *dat);
+void rddir(struct Dir *o, const char *dat, const struct BsBpb *b1,
+	const struct BsBpb32 *b2);
+
+int fstdatsect(const struct BsBpb *b1, const struct BsBpb32 *b2);
+int sctaddr(const struct BsBpb *b1, const struct BsBpb32 *b2);

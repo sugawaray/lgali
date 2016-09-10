@@ -8,3 +8,7 @@ TANY fopen(const char *filename, const char *mode);
 int fclose(TANY fd);
 Tsize_t fread(void *ptr, Tsize_t sz, Tsize_t cnt, TANY fd);
 int feof(TANY fd);
+long ftell(TANY f);
+void *malloc(Tsize_t);
+void *realloc(void *, Tsize_t);
+void free(void *);
