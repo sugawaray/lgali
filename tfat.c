@@ -3,6 +3,7 @@
 #include "th.h"
 
 #define AEQ(e, x)	do { if ((e) != (x)) { testerror(testmsg("0x%08x != 0x%08x", (e), (x))); } } while (0)
+#define AEQS(e, x)	do { if (strcmp((e), (x)) != 0) { testerror(testmsg("[%s] != [%s]", (e), (x))); } } while (0)
 
 static char buf[512];
 static char *buf1;
@@ -162,44 +163,7 @@ rddir_root_test()
 	rdbsbpb(&b1, buf1);
 	rdbsbpb32(&b2, buf1);
 	rddir(&o, buf1, &b1, &b2);
-	testerror(testmsg("BPB_FATSz16: %04x", b1.BPB_FATSz16));
-	testerror(testmsg("BPB_BytsPerSec: %04x", b1.BPB_BytsPerSec));
-	testerror(testmsg("BPB_RootClus: %08x", b2.BPB_RootClus));
-	testerror(testmsg("BPB_SecPerClus: %02x", b1.BPB_SecPerClus));
-	testerror(testmsg("DIR_Attr: %02x", o.DIR_Attr));
-	testerror(testmsg("DIR_FstClus: %08x", o.DIR_FstClus));
-	testerror(testmsg("DIR_Name: [%s]", o.DIR_Name));
-	testerror("assert fail. check output.");
-}
-
-static
-void
-fstdatsect_test()
-{
-	int i;
-	struct BsBpb b1;
-	struct BsBpb32 b2;
-
-	rdbin1();
-	rdbsbpb(&b1, buf1);
-	rdbsbpb32(&b2, buf1);
-	i = fstdatsect(&b1, &b2);
-	testerror(testmsg("%08x", i));
-}
-
-static
-void
-sctaddr_test()
-{
-	int i;
-	struct BsBpb b1;
-	struct BsBpb32 b2;
-
-	rdbin1();
-	rdbsbpb(&b1, buf1);
-	rdbsbpb32(&b2, buf1);
-	i = sctaddr(&b1, &b2);
-	testerror(testmsg("ADDR: %08x", i));
+	AEQS(o.DIR_Name, "EMPTY   TXT");
 }
 
 int
@@ -208,7 +172,5 @@ main()
 	testrun("rdbsbpb", rdbsbpb_test);
 	testrun("rdbsbpb32", rdbsbpb32_test);
 	testrun("rddir root", rddir_root_test);
-	testrun("fstdatsect", fstdatsect_test);
-	testrun("sctaddr", sctaddr_test);
 	return 0;
 }
